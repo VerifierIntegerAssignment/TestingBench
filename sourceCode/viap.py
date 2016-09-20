@@ -50,6 +50,7 @@ import datetime
 import ConfigParser
 from pyparsing import *
 from sympy.core.relational import Relational
+from pycparser import parse_file,c_parser, c_ast, c_generator
 ParserElement.enablePackrat()
 
 
@@ -3194,10 +3195,25 @@ def validationOfInput(allvariable):
 	return False
 
 
+"""
+
+Translate Program to Logic 
+
+"""
 
 
-
-
+def translate(file_name):
+	if not(os.path.exists(file_name)): 
+		print "File not exits"
+		return
+	filename, file_extension = os.path.splitext(file_name)
+	if file_extension=='.java' or file_extension=='.Java' or file_extension=='.JAVA':
+		return translate_Java(file_name)
+	elif file_extension=='.c' or file_extension=='.C' :
+		return translate_C(file_name)
+	else:
+		return None
+	print file_extension
 
 """
 
@@ -3225,9 +3241,11 @@ flag=2
 
 #axiom=translate(file_name)
 
+#file_name='cohendiv.java'
+
 """
   
-def translate(file_name):
+def translate_Java(file_name):
 	if not(os.path.exists(file_name)): 
 		print "File not exits"
 		return
@@ -3305,9 +3323,6 @@ def translate(file_name):
                 for lvap in localvarmap:
                 	var=localvarmap[lvap]
                 	if var is not None and var.getInitialvalue() is not None:
-                		print type(var.getInitialvalue())
-                		print var.getVariablename()
-                		print var.getInitialvalue().value
                 		if program_dec_start=="":
                 			program_dec_start="['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue().value)+"')]"
                 			program_dec_end="]"
@@ -3852,9 +3867,9 @@ def query2z3(constraint_list,conclusion,vfact,inputmap):
 			pythonProgram+=")\n"
 	power_flag=False
 	for equation in constraint_list:
-		if '**' in equation:
+		if '**' in equation or 'power' in equation:
 			power_flag=True
-	if '**' in conclusion:
+	if '**' in conclusion or 'power' in conclusion:
 		power_flag=True
 	if power_flag==True:		
 		pythonProgram+="power=Function(\'power\',IntSort(),IntSort(),IntSort())\n"
@@ -4438,7 +4453,472 @@ def isFunction(expression):
 				return expression
 			else:
 				return None
+
+
+#C parsing Function
+
+
+"""
+
+#C Function Class
+#Plain Python object to store Information about Function
+"""
+class cFunctionclass(object):
+ 	def __init__(self, functionname, returnType , inputvar, localvar):
+        	self.functionname = functionname
+        	self.inputvar = inputvar
+        	self.returnType = returnType
+        	self.localvar = localvar
+        def getFunctionname(self):
+        	return self.methodname
+        def getreturnType(self):
+        	return self.returnType
+        def getInputvar(self):
+        	return self.inputvar
+        def getLocalvar(self):
+        	return self.localvar
+			    
+
+
+
+
+def translate_C(file_name):
+    if not(os.path.exists(file_name)): 
+        print "File not exits"
+	return
+
+    start_time=current_milli_time()
+    content=None
+    with open(file_name) as f:
+    	content = f.read()
+    content=content.replace('\r','')
+    text = r""" """+content
+    parser = c_parser.CParser()
+    #ast = parse_file(file_name, use_cpp=True)
+    ast = parser.parse(text)
+    generator = c_generator.CGenerator()
+    writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Translate \n"+"\nParameters--\n File Name--"+file_name+"\n")
+    if ast is None:
+        print "Error present in code. Please verify you input file"
+        return
+    if len(ast.ext)==0:
+        print "Error present in code. Please verify you input file"
+        return
+    generator = c_generator.CGenerator()
+    function_decl = ast.ext[0].decl
+    
+    parametermap={}
+    
+    for param_decl in function_decl.type.args.params:
+	variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+        parametermap[param_decl.name]=variable
+    function_body = ast.ext[0].body
+    localvarmap=getVariables(function_body)
+    membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap)
+    print "Function Name:"
+    print membermethod.getMethodname()
+    print "Return Type:"
+    print membermethod.getreturnType()
+    print "Input Variables:"
+    var_list="{"
+    for x in membermethod.getInputvar():
+        if membermethod.getInputvar()[x].getDimensions()>0:
+            var_list+=' '+x+':array'
+	else:
+	    var_list+=' '+x+':'+membermethod.getInputvar()[x].getVariableType()
+    var_list+='}'
+    print var_list
+    print "Local Variables:"
+    var_list="{"
+    for x in membermethod.getLocalvar():
+        if membermethod.getLocalvar()[x].getDimensions()>0:
+            var_list+=' '+x+':array'
+	else:
+            var_list+=' '+x+':'+membermethod.getLocalvar()[x].getVariableType()
+    var_list+='}'
+    print var_list
+    allvariable={}
+    program_dec_start=""
+    program_dec_end=""
+    for lvap in localvarmap:
+        var=localvarmap[lvap]
+        if var is not None and var.getInitialvalue() is not None:
+            if program_dec_start=="":
+                program_dec_start="['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue())+"')]"
+                program_dec_end="]"
+            else:
+                program_dec_start+=",['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue())+"')]"
+                program_dec_end+="]"
+    for x in membermethod.getInputvar():
+        allvariable[x]=membermethod.getInputvar()[x]
+    for x in membermethod.getLocalvar():
+        allvariable[x]=membermethod.getLocalvar()[x]
+    #print getBody(function_body)
+    expressions=organizeStatementToObject_C(function_body.block_items)
+    primeStatement(expressions)
+    variablesarray={}
+    opvariablesarray={}
+    count=0
+    arrayFlag=False
+    for variable in allvariable:
+        count+=1
+        if allvariable[variable].getDimensions()>0:
+            variablesarray[variable]=eval("['_y"+str(count)+"','array']")
+            opvariablesarray[variable+"1"]=eval("['_y"+str(count)+"','array']")
+            list_parameter="'array'"
+            for i in range(0, allvariable[variable].getDimensions()):
+                if list_parameter=='':
+                    list_parameter="'int'"
+                else:
+                    list_parameter+=",'int'"
+                list_parameter+=",'"+allvariable[variable].getVariableType()+"'"
+                key1='at'
+                key2='gt'
+                arrayFlag=True
+                if key1 not in variablesarray.keys():
+                    count+=1
+                    variablesarray[key1]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+                    opvariablesarray[key1+"1"]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+                if key2 not in variablesarray.keys():
+                    count+=1
+                    variablesarray[key2]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+                    opvariablesarray[key2+"1"]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+        else:
+            variablesarray[variable]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
+            opvariablesarray[variable+"1"]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
+    if arrayFlag==True:
+        count+=1
+        variablesarray['length']=eval("['_y"+str(count)+"','array','int']")
+        opvariablesarray['length1']=eval("['_y"+str(count)+"','array','int']")
+    if program_dec_start=="":
+        str_program=programToinductiveDefination_C(expressions , allvariable)
+    else:
+        str_program=program_dec_start+','+programToinductiveDefination_C(expressions , allvariable)+program_dec_end
+    program=eval(str_program)
+    f,o,a,cm=translate1(program,variablesarray,1)
+    #f,o,a,cm=translate1(program,variablesarray,2)
+    vfacts,constraints=getVariFunDetails(f,o,a,allvariable,opvariablesarray)
+    end_time=current_milli_time()
+    print "Times to Translate"
+    print end_time-start_time
+    writeLogFile( "j2llogs.logs" , getTimeStamp()+"\n End of Translation\n")
+    axiom=axiomclass(f,o,a,membermethod.getInputvar(), vfacts, constraints,cm)
+    return axiom
+            
+    
+
+
+#Get All Variables
+
+
+def getVariables(function_body):
+    localvarmap={}
+    for decl in function_body.block_items:
+        if type(decl) is c_ast.Decl:
+            var_type=None
+            initial_value=None
+            for child in decl.children():
+                if type(child[1].type) is c_ast.IdentifierType:
+                    var_type=child[1].type.names[0]
+		else:
+                    initial_value=child[1].value
+            variable=variableclass(decl.name, var_type,None,None,initial_value)
+            localvarmap[decl.name]=variable
+    return localvarmap
+
+
+
+
+
+"""
+
+Organization of AST 
+
+"""
+               
+def organizeStatementToObject_C(statements):
+	count=0
+	degree=0
+	expressions=[]
+	for statement in statements:
+                if type(statement) is c_ast.Assignment:
+			count=count+1
+			expression=expressionclass(statement, count, True,degree)
+			expressions.append(expression)
+                elif type(statement) is c_ast.While:
+                    blockexpressions=[]
+                    if statement.stmt is not None:
+                        degree=degree+1
+			count,blockexpressions=blockToExpressions_C(statement.stmt.block_items, degree, count)
+			degree=degree-1
+		    block=blockclass( blockexpressions, statement.cond, count , True, degree)
+		    expressions.append(block)
+		else:
+			if type(statement) is c_ast.If:
+				count,ifclass=ifclassCreator_C(statement, degree, count)
+				expressions.append(ifclass)
+					
+     	return expressions
+
+
+
+"""
+
+Conditionl Loop to a Array of Statement Compatible to Translator Program 
+IfClass Creator
+
+"""
+
+def ifclassCreator_C(statement, degree, count):
+        blockexpressions1=None
+	blockexpressions2=None
+	predicate=statement.cond
+	#print statement.iftrue.show()
+	#print statement.iffalse.show()
+        if statement.iftrue is not None:
+            count,blockexpressions1=blockToExpressions_C(statement.iftrue.block_items, degree, count)
+        if statement.iffalse is not None and type(statement.iffalse) is c_ast.If:
+        	count,blockexpressions2=ifclassCreator_C(statement.iffalse, degree, count)
+        else:
+        	if statement.iffalse is not None:
+            		count,blockexpressions2=blockToExpressions_C(statement.iffalse.block_items, degree, count)
+	ifclass=Ifclass(predicate, blockexpressions1, blockexpressions2, count ,True ,degree)
+	return count,ifclass
+
+
+
+"""
+
+Converting code block,while loop ,conditional expression and expression to corresponding Classes
+
+"""
+
+def blockToExpressions_C(body, degree, count):
+	expressions=[]
+	if body is not None:
+		for statement in body:
+                    if type(statement) is c_ast.Assignment:
+			count=count+1
+			expression=expressionclass(statement, count, True,degree)
+			expressions.append(expression)
+                    elif type(statement) is c_ast.While:
+                        blockexpressions=[]
+                        if statement.stmt is not None:
+                            degree=degree+1
+                            count,blockexpressions=blockToExpressions_C(statement.stmt.block_items, degree, count)
+                            degree=degree-1
+                        block=blockclass( blockexpressions, statement.cond, count , True, degree)
+                        expressions.append(block)
+                    else:
+			if type(statement) is c_ast.If:
+				count,ifclass=ifclassCreator_C(statement, degree, count)
+				expressions.append(ifclass)
+	return count,expressions
+
+
+
+
+"""
+
+Block of Statement to Array of Statement Compatible to Translator Program 
+
+"""
+def programToinductiveDefination_C(expressions, allvariable):
+	programsstart=""
+	programsend=""
+	statements=""
+	for expression in expressions:
+		if type(expression) is expressionclass:
+			if type(expression.getExpression()) is c_ast.Assignment:
+                                var=None
+                                if type(expression.getExpression().lvalue) is c_ast.ID:
+                                    var=expression.getExpression().lvalue.name 
+                                elif type(expression.getExpression().lvalue) is c_ast.Constant:
+                                    var=expression.getExpression().lvalue.value 
+				if expression.getIsPrime()==False:
+                                    if programsstart=="":
+                                        programsstart="['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
+                                        programsend="]"
+				    else:
+					programsstart+=",['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
+					programsend+="]"
+				else:
+                                    if programsstart=="":
+                                        programsstart+="['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
+                                    else:
+                                        programsstart+=",['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
+		elif type(expression) is blockclass:
+			predicatestmt="['-1','while',"+expressionCreator_C(expression.predicate)+","+programToinductiveDefination_C( expression.getExpression(), allvariable)+"]"
+			if expression.getIsPrime()==False:
+				if programsstart=="":
+					programsstart="['-1','seq',"+predicatestmt
+					programsend="]"
+				else:
+					programsstart+=",['-1','seq',"+predicatestmt
+					programsend+="]"
+			else:
+				programsstart+=","+predicatestmt+programsend
+		elif type(expression) is Ifclass:
+			condition=expressionCreator_C(expression.predicate)
+			expressionif=None
+			expressionelse=None
+			predicatestmt=""
+			if expression.getExpressionif() is not None:
+				expressionif=programToinductiveDefination_C( expression.getExpressionif(), allvariable)
+			if expression.getExpressionelse() is not None:
+				if type(expression.getExpressionelse()) is Ifclass:
+					#expressionelse=programToinductiveDefination( expression.getExpressionelse().getExpressionif(), allvariable)
+					expressionelse=programToinductiveDefinationIfElse_C( expression.getExpressionelse(), allvariable)
+				else:
+					expressionelse=programToinductiveDefination_C( expression.getExpressionelse(), allvariable)
+			if expressionif is not None and expressionelse is not None:
+                          	predicatestmt="['-1','if2',"+condition+","+expressionif+","+expressionelse+"]"
+			elif expressionif is not None and expressionelse is None:
+				predicatestmt="['-1','if1',"+condition+","+expressionif+"]"
+			if expression.getIsPrime()==False:
+				if programsstart=="":
+					programsstart="['-1','seq',"+predicatestmt
+					programsend="]"
+				else:
+					programsstart+=",['-1','seq',"+predicatestmt
+					programsend+="]"
+			else:
+				if programsstart=="":
+					programsstart=predicatestmt+programsend
+				else:
+					programsstart+=","+predicatestmt+programsend
+	if programsstart[0]==',':
+		programsstart=programsstart[1:]	
+	return programsstart
+
+
+
+
+
+"""
+
+IfElse Block Statement to Array of Statement Compatible to Translator Program 
+
+"""
+def programToinductiveDefinationIfElse_C(expression, allvariable):
+	programsstart=""
+	programsend=""
+	statements=""
+	if type(expression) is expressionclass:
+		if type(expression.getExpression()) is c_ast.Assignment:
+                        var=None
+                        if type(expression.getExpression().lvalue) is c_ast.ID:
+                            var=expression.getExpression().lvalue.name 
+                        elif type(expression.getExpression().lvalue) is c_ast.Constant:
+                            var=expression.getExpression().lvalue.value 
+			if expression.getIsPrime()==False:
+                            if programsstart=="":
+                                programsstart="['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"
+                                programsend="]"
+			    else:
+                                programsstart+=",['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"
+                                programsend+="]"
+                        else:
+                            if programsstart=="":
+                                programsstart+="['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
+                            else:
+                                programsstart+=",['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
+
+	elif type(expression) is blockclass:
+		predicatestmt="['-1','while',"+expressionCreator_C(expression.predicate)+","+programToinductiveDefination_C( expression.getExpression(), allvariable)+"]"
+		if expression.getIsPrime()==False:
+			if programsstart=="":
+				programsstart="['-1','seq',"+predicatestmt
+				programsend="]"
+			else:
+				programsstart+=",['-1','seq',"+predicatestmt
+				programsend+="]"
+		else:
+			if programsstart=="":
+				programsstart+=","+predicatestmt+programsend
 			
+	elif type(expression) is Ifclass:
+		condition=expressionCreator_C(expression.predicate)
+		expressionif=None
+		expressionelse=None
+		predicatestmt=""
+		if expression.getExpressionif() is not None:
+			expressionif=programToinductiveDefination_C( expression.getExpressionif(), allvariable)
+		if expression.getExpressionelse() is not None:
+			if type(expression.getExpressionelse()) is Ifclass:
+				#expressionelse=programToinductiveDefination( expression.getExpressionelse().getExpressionif(), allvariable)
+				expressionelse=programToinductiveDefinationIfElse_C( expression.getExpressionelse(), allvariable)
+			else:
+				expressionelse=programToinductiveDefination_C( expression.getExpressionelse(), allvariable)
+		if expressionif is not None and expressionelse is not None:
+                	predicatestmt="['-1','if2',"+condition+","+expressionif+","+expressionelse+"]"
+		elif expressionif is not None and expressionelse is None:
+			predicatestmt="['-1','if1',"+condition+","+expressionif+"]"
+		if expression.getIsPrime()==False:
+			if programsstart=="":
+				programsstart="['-1','seq',"+predicatestmt
+				programsend="]"
+			else:
+				programsstart+=",['-1','seq',"+predicatestmt
+				programsend+="]"
+		else:
+			if programsstart=="":
+				programsstart=predicatestmt+programsend
+			else:
+				programsstart+=","+predicatestmt+programsend
+ 	return programsstart
+
+
+"""
+
+Program Expression to a Array of Statement Compatible to Translator Program 
+
+"""
+
+def expressionCreator_C(statement):
+    expression=""
+    if type(statement) is c_ast.ID:
+        return "expres('"+statement.name+"')"
+    elif type(statement) is c_ast.Constant:
+        return "expres('"+statement.value+"')"
+    else:
+        if statement.op in ['+','-','*','/','%']:
+            expression="expres('"
+            expression+=statement.op
+            if type(statement) is c_ast.BinaryOp:
+            	expression+="',["+expressionCreator_C(statement.left)
+           	expression+=','+expressionCreator_C(statement.right)
+            else:
+            	expression+="',["+expressionCreator_C(statement.expr)
+            expression+='])'
+            return expression
+        else:
+            expression="['"
+            if statement.op == '&&':
+                expression+='and'
+            elif statement.op == '||':
+                expression+='or'
+            else:
+                expression+=statement.op
+            if type(statement) is c_ast.BinaryOp:
+            	expression+="',"+expressionCreator_C(statement.left)
+            	expression+=','+expressionCreator_C(statement.right)
+            else:
+            	expression+="',["+expressionCreator_C(statement.expr)
+            expression+=']'
+            return expression
+
+
+
+
+
+
+    
+    
+ 
+
+
+			    
 		
 
 
