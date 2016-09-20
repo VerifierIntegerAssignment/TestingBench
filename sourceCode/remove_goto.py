@@ -56,13 +56,13 @@ def gotoremoval(statements):
     			lists = element[3]
     			for list in lists:
     				if element[0]>=list[0] and element[1]>=list[1]:
-    					print 'Ram Ram 1'
-    					statements=goto_finder(statements,item)
+        				statements=goto_finder(statements,item)
     					statements=go_block_finder(statements,item)
+    					statements=gotoremoval(statements)
     				else:
-    					print 'Ram Ram 2'
     					statements=label_finder(statements,item)
     					statements=go_block_finder(statements,item)
+    					statements=gotoremoval(statements)
     	return statements
 
 
@@ -692,11 +692,7 @@ def label_finder(statements,label):
 	if statements is not None:
 		flag_block1=check_label_block(statements,label)
 		if flag_block1==True:
-			flag_block1=check_goto_block_Sp(statements,label)
-			if flag_block1==True:
-				return gotomoveout(statements,label)
-			else:
-				return statements
+			return gotomoveout(statements,label)
 		else:
 			update_statements=[]
 			if statements is not None:
@@ -949,7 +945,7 @@ def getRidOfGoto(statement,label):
 def goto_finder(statements,label):
 	flag_block1=check_goto_block_Sp(statements,label)
 	if flag_block1==True:
-		flag_block1=check_label_block(statements,label)
+		flag_block1=check_label_block_sp(statements,label)
 		if flag_block1==True:
 			return statements
 		else:
@@ -1046,7 +1042,8 @@ def gotomovein(statements,label):
 				if flag_block2==False and flag_stmt2==False:
 					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
 				elif flag_block2==True and flag_stmt2==True:
-					new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
 					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
 					new_blocks=[]
 					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
@@ -1057,7 +1054,8 @@ def gotomovein(statements,label):
 					flag=False
 					new_statements2=[]
 				elif flag_block2==True and flag_stmt2==False:
-					new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
 					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
 					new_blocks=[]
 					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
@@ -1116,7 +1114,8 @@ def gotomoveinrec(statements,label,condition):
 					else:
 						if flag_block2==True and flag_stmt2==True:
 							flag=False
-							new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+							if len(new_statements2)>0:
+								new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
 							new_statements1.append(updateIfBlock(statement,label,condition))
 							new_statements2=[]
 						else:
@@ -1131,7 +1130,8 @@ def gotomoveinrec(statements,label,condition):
 				if flag_block2==False and flag_stmt2==False:
 					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
 				elif flag_block2==True and flag_stmt2==True:
-					new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
 					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
 					new_blocks=[]
 					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
@@ -1142,7 +1142,8 @@ def gotomoveinrec(statements,label,condition):
 					flag=False
 					new_statements2=[]
 				elif flag_block2==True and flag_stmt2==False:
-					new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
 					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
 					new_blocks=[]
 					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
