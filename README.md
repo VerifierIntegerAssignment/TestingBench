@@ -1,4 +1,4 @@
-## Verifier for Integer Assignment Programs (VIAP)<h3> Getting Started
+## Testing Bench of Verifier for Integer Assignment Programs (VIAP)<h3> Getting Started
 
 To get started, see the Quick Guide
 
