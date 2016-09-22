@@ -1978,7 +1978,11 @@ def simplify_sympy(expression):
 	
 	else:
 		#return str(sympify(expression).expand(basic=True))
-		return pow_to_mul(powsimp(sympify(expression).expand(basic=True)))
+		expressiontemp=sympify(expression).expand(basic=True)
+		if '/' in str(expressiontemp):
+			return pow_to_mul(powsimp(sympify(expression)))
+		else:
+			return pow_to_mul(powsimp(sympify(expression).expand(basic=True)))
 	
 
 def substituteValue(expression,key,value):
@@ -3652,6 +3656,13 @@ def simplify_conclusion(conclusion,subs_list):
 				return 'Exists('+arg_list[0]+','+result+')'
 			else:
 				return None
+		elif 'Not' in conclusion and term=='Not':
+			arg_list=extract_args(conclusion)
+			result=simplify_conclusion(arg_list[1],subs_list) 
+			if result is not None:
+				return 'Not('+result+')'
+			else:
+				return None
 		elif 'Implies' in conclusion and term=='Implies':
 			arg_list=extract_args(conclusion)
 			result1=simplify_conclusion(arg_list[0],subs_list)
@@ -3794,7 +3805,7 @@ def prove1(axiom,pre_condition,post_condition,flag):
                 elif flag==2:
                 	writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Prove \n"+"\nParameters--\n"+"\n Pre Condition--"+str(pre_condition)+"\n Post Condition--"+str(post_condition)+"\n Strategy--Induction")
                 	start_time=current_milli_time()
-			tactic2(axiom.getFrame_axioms(),axiom.getOutput_equations(),axiom.getOther_axioms(),pre_condition,post_condition,axiom.getVfact(),axiom.getInputvariable(),axiom.getConstraints(),axiom.getConst_var_map())
+			#tactic2(axiom.getFrame_axioms(),axiom.getOutput_equations(),axiom.getOther_axioms(),pre_condition,post_condition,axiom.getVfact(),axiom.getInputvariable(),axiom.getConstraints(),axiom.getConst_var_map())
 			end_time=current_milli_time()
 			print "Times to Get Result"
                 	print end_time-start_time
@@ -3821,6 +3832,7 @@ def prove(axiom,pre_condition,post_condition):
 			print status		
 		else:
 			status=tactic2(axiom.getFrame_axioms(),axiom.getOutput_equations(),axiom.getOther_axioms(),pre_condition,post_condition,axiom.getVfact(),axiom.getInputvariable(),axiom.getConstraints(),axiom.getConst_var_map())
+		
 			if "Successfully Proved" in status:
 				print "Successfully Proved"			
 			elif "Counter Example" in status:
@@ -3890,11 +3902,7 @@ def query2z3(constraint_list,conclusion,vfact,inputmap):
 	for equation in constraint_list:
 		pythonProgram+="_s.add("+str(equation)+")\n"
 	finalProgram=pythonProgram
-	if 'Not(' in conclusion:
-		arg_list=extract_args(conclusion)
-		finalProgram+="_s.add(Not(Not("+str(transferToFunctionRec(arg_list[0]))+")))\n"
-	else:
-		finalProgram+="_s.add(Not("+str(transferToFunctionRec(conclusion))+"))\n"
+	finalProgram+="_s.add(Not("+str(transferToFunctionRec(conclusion))+"))\n"
 	finalProgram+="if sat==_s.check():\n"+"\tprint \"Counter Example\"\n"+"\tprint _s.model()\n"+"elif unsat==_s.check():\n"+"\t_s.check()\n"+"\tif os.path.isfile(\'j2llogs.logs\'):\n"+"\t\tfile = open(\'j2llogs.logs\', \'a\')\n"+"\t\tfile.write(\"\\n**************\\nProof Details\\n**************\\n\"+str(_s.proof().children())+\"\\n\")\n"+"\t\tfile.close()\n"+"\telse:\n"+"\t\tfile = open(\'j2llogs.logs\', \'w\')\n"+"\t\tfile.write(\"\\n**************\\nProof Details\\n**************\\n\"+str(_s.proof().children())+\"\\n\")\n"+"\t\tfile.close()\n"+"\tprint \"Successfully Proved\"\n"+"else:\n"+"\tprint \"Failed To Prove\""
 	#finalProgram+="if sat==_s.check():\n"+"\tprint \"Counter Example\"\n"+"\tprint _s.model()\n"+"elif unsat==_s.check():\n"+"\t_s.check()\n"+"\tprint \"Successfully Proved\"\n"+"else:\n"+"\tprint \"Failed To Prove\""
 	#print finalProgram
@@ -4276,6 +4284,10 @@ def tactic2(f,o,a,pre_condition,conclusions,vfact,inputmap,constaints,const_var_
 					if len(case_list)>0:
 						case_status=False
 						for case in case_list:
+							print '#################'
+							print inductiveassum
+							print case
+							print '#################'
 							inductivestep='Implies(And('+str(inductiveassum)+','+case+'),'+case_temp_inductivestep+')'
 							status=query2z3(updated_equation,str(inductivestep),update_vfact,inputmap)
 							if "Successfully Proved" in status:
@@ -4304,23 +4316,60 @@ def tactic2(f,o,a,pre_condition,conclusions,vfact,inputmap,constaints,const_var_
 #Recursive Function to ** to power Function
 
 def transferToFunctionRec(expression):
-	if 'ForAll' in expression:
+	term=isFunction(expression)
+	if term is None:
+		return None
+
+	if 'ForAll' in expression and term=='ForAll':
 		arg_list=extract_args(expression)
-		return 'ForAll('+arg_list[0]+','+transferToFunctionRec(arg_list[1])+')'
-	elif 'Or' in expression:
+		result=transferToFunctionRec(arg_list[1])
+		if result is not None:
+			return 'ForAll('+arg_list[0]+','+result+')'
+		else:
+			return None
+	elif 'Or' in expression and term=='Or':
 		arg_list=extract_args(expression)
-		return 'Or('+transferToFunctionRec(arg_list[0])+','+transferToFunctionRec(arg_list[1])+')'
-	elif 'And' in expression:
+		result1=transferToFunctionRec(arg_list[0])
+		result2=transferToFunctionRec(arg_list[1])
+		if result1 is not None and result2 is not None:
+			return 'Or('+result1+','+result2+')'
+		else:
+			return None
+	elif 'And' in expression and term=='And':
 		arg_list=extract_args(expression)
-		return 'And('+transferToFunctionRec(arg_list[0])+','+transferToFunctionRec(arg_list[1])+')'
-	elif 'Implies' in expression:
+
+		result1=transferToFunctionRec(arg_list[0])
+		result2=transferToFunctionRec(arg_list[1])
+		if result1 is not None and result2 is not None:
+			return 'And('+result1+','+result2+')'
+		else:
+			return None
+	elif 'Implies' in expression and term=='Implies':
 		arg_list=extract_args(expression)
-		return 'Implies('+transferToFunctionRec(arg_list[0])+','+transferToFunctionRec(arg_list[1])+')'
-	elif 'Exists' in expression:
+		result1=transferToFunctionRec(arg_list[0])
+		result2=transferToFunctionRec(arg_list[1])
+		if result1 is not None and result2 is not None:
+			return 'Implies('+result1+','+result2+')'
+		else:
+			return None
+	elif 'Exists' in expression and term=='Exists':
 		arg_list=extract_args(expression)
-		return 'Exists('+arg_list[0]+','+transferToFunctionRec(arg_list[1])+')'
+		result=transferToFunctionRec(arg_list[1])
+		if result is not None:
+			return 'Exists('+arg_list[0]+','+result+')'
+		else:
+			return None
+	elif 'Not' in expression and term=='Not':
+		arg_list=extract_args(expression)
+		result=transferToFunctionRec(arg_list[0])
+		if result is not None:
+			return 'Not('+transferToFunctionRec(arg_list[0])+')'
+		else:
+			return None
 	else:
 		return translatepowerToFun(expression)
+		
+		
 #Stack Implementaion 
 
 class Stack:
@@ -4414,7 +4463,7 @@ def expr2simplified(e,flag):
 #expression="m1==((((Z**(K)-1)/(Z-1))*(Z-1)))"
 
 def isFunction(expression):
-	function=['ForAll','Or','And','Exists','Implies']
+	function=['ForAll','Or','And','Exists','Implies','Not']
 	operators=['==','<=','>=','>','<','!=']
 	if 'ForAll' in expression or 'Or' in expression or 'And' in expression and 'Exists' in  expression or 'Implies' in expression:
 		arg_list=extract_args(expression)
