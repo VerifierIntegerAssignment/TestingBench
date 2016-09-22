@@ -4284,10 +4284,7 @@ def tactic2(f,o,a,pre_condition,conclusions,vfact,inputmap,constaints,const_var_
 					if len(case_list)>0:
 						case_status=False
 						for case in case_list:
-							print '#################'
-							print inductiveassum
-							print case
-							print '#################'
+
 							inductivestep='Implies(And('+str(inductiveassum)+','+case+'),'+case_temp_inductivestep+')'
 							status=query2z3(updated_equation,str(inductivestep),update_vfact,inputmap)
 							if "Successfully Proved" in status:
@@ -4316,7 +4313,9 @@ def tactic2(f,o,a,pre_condition,conclusions,vfact,inputmap,constaints,const_var_
 #Recursive Function to ** to power Function
 
 def transferToFunctionRec(expression):
+
 	term=isFunction(expression)
+	
 	if term is None:
 		return None
 
@@ -4464,8 +4463,9 @@ def expr2simplified(e,flag):
 
 def isFunction(expression):
 	function=['ForAll','Or','And','Exists','Implies','Not']
+
 	operators=['==','<=','>=','>','<','!=']
-	if 'ForAll' in expression or 'Or' in expression or 'And' in expression and 'Exists' in  expression or 'Implies' in expression:
+	if 'ForAll' in expression or 'Or' in expression or 'And' in expression or 'Exists' in  expression or 'Implies' in expression or 'Not' in expression:
 		arg_list=extract_args(expression)
 		arglist=""
 		for arg in arg_list:
@@ -4474,8 +4474,11 @@ def isFunction(expression):
 			else:
 				arglist+=','+arg
 		arglist+=")"
+		
+		
 		tem_expression=expression.replace(arglist,'')
 		tem_expression=tem_expression.strip()
+		
 		if tem_expression in function:
 			return tem_expression
 		else:
