@@ -17,6 +17,7 @@ new_variable={}
 
 def remove_goto(filename):
     content=None
+    global new_variable
     new_variable={}
     with open(filename) as f:
         content = f.read()
@@ -35,6 +36,7 @@ def remove_goto(filename):
     	update_statements.append(temp)
     for statement in statements:
     	update_statements.append(statement)
+    update_statements=removeEmptyIfLoop(update_statements)
     function_body.block_items=update_statements
     body_comp = c_ast.Compound(block_items=update_statements)
     generator = c_generator.CGenerator()   
@@ -176,7 +178,12 @@ def remove_goto_block(statements,label):
 						for stmt in new_statements2:
 							new_statements1.append(stmt)
 						new_statements1.append(statement)
+						
+						new_break_map={}
+						new_statements2=reOrganizeBreaks(new_statements2,new_break_map)
+
 						new_statements1.append(c_ast.While(cond=condition, stmt=c_ast.Compound(block_items=new_statements2)))
+						new_statements1=addingBreakVariables(new_statements1,new_break_map)
 						flag_label=False
 						flag_goto=False
 					else:
@@ -204,12 +211,13 @@ def remove_goto_block(statements,label):
     
 def constructLabelTable(statements,level,block,lineCount):
 	label_map={}
-	for statement in statements:
-		if type(statement) is c_ast.If:
-			label_map_temp=constructLabelTable_If(statement,level,block,lineCount)
-	            	for item in label_map_temp:
-            			label_map[item]=label_map_temp[item]
-		elif type(statement) is c_ast.Label:
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				label_map_temp=constructLabelTable_If(statement,level,block,lineCount)
+	            		for item in label_map_temp:
+            				label_map[item]=label_map_temp[item]
+			elif type(statement) is c_ast.Label:
 				lineCount=lineCount+1
 			        info=[]
 			        info.append(level)
@@ -217,15 +225,15 @@ def constructLabelTable(statements,level,block,lineCount):
 	            		info.append(lineCount)
 	            		info.append([])
 				label_map[statement.name]=info
-	        else:
-	        	if type(statement) is c_ast.While:
-	        		level=level+1
-	            		label_map_temp=constructLabelTable(statement.stmt.block_items,level,block,lineCount)
-	            		for item in label_map_temp:
-            				label_map[item]=label_map_temp[item]
-            			level=level-1
-            		else:
-            			lineCount=lineCount+1
+	        	else:
+	        		if type(statement) is c_ast.While:
+	        			level=level+1
+	            			label_map_temp=constructLabelTable(statement.stmt.block_items,level,block,lineCount)
+	            			for item in label_map_temp:
+            					label_map[item]=label_map_temp[item]
+            				level=level-1
+            			else:
+            				lineCount=lineCount+1
 	return label_map
 
 
@@ -1231,3 +1239,120 @@ def updateIfBlock(statement,label,condition):
 		return c_ast.If(cond=new_condtion, iftrue=new_iftrue, iffalse=new_iffalse)
 	else:
 		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	
+	
+	
+
+def reOrganizeBreaks(statements,new_break_map):
+	update_statement=[]
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				statement=reOrganizeBreaksIf(statement,new_break_map)
+				update_statement.append(statement)
+			elif type(statement) is c_ast.Break:
+				update_statement.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+				new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+				update_statement.append(statement)
+			else:
+				update_statement.append(statement)
+		return update_statement
+	else:
+		return None
+
+
+def reOrganizeBreaksIf(statement,new_break_map):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Break:
+			new_block=[]
+			new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+			new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+			new_block.append(statement.iftrue)
+			new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iftrue) is c_ast.Compound:
+				new_block=reOrganizeBreaks(statement.iftrue.block_items,new_break_map)
+				new_iftrue=c_ast.Compound(block_items=new_block)
+		
+		if type(statement.iffalse) is c_ast.Break:
+			new_block=[]
+			new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+			new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+			new_block.append(statement.iffalse)
+			new_iffalse=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iffalse) is c_ast.Compound:
+				new_block=reOrganizeBreaks(statement.iffalse.block_items,new_break_map)
+				new_iffalse=c_ast.Compound(block_items=new_block)
+			else:
+				if type(statement.iffalse) is c_ast.If:
+					new_iffalse=reOrganizeBreaksIf(statement.iffalse,new_break_map)
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+		
+		
+		
+def addingBreakVariables(statements,new_break_map):
+	for variable in new_break_map.keys():
+		global new_variable
+		new_variable[variable]=variable
+		new_block=[]
+		new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=variable), rvalue=c_ast.Constant(type='int', value='0')))
+		new_iftrue=c_ast.Compound(block_items=new_block)
+		statements.append(c_ast.If(cond=c_ast.BinaryOp(op='==', left=c_ast.ID(name=variable), right=c_ast.Constant(type='int', value='1')), iftrue=new_iftrue, iffalse=None))
+	return statements
+	
+	
+
+def removeEmptyIfLoop(statements):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			statement=removeEmptyIfLoop_If(statement)
+			if statement is not None:
+				update_statements.append(statement)
+		elif type(statement) is c_ast.While:
+			new_block_items=removeEmptyIfLoop(statement.stmt.block_items)
+			update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=new_block_items)))
+		else:
+			update_statements.append(statement)
+	return update_statements
+			
+			
+			
+def removeEmptyIfLoop_If(statement):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+	
+		if type(statement.iftrue) is c_ast.Compound:
+			if len(statement.iftrue.block_items)==0:
+				new_iftrue=None
+			else:
+				new_iftrue=statement.iftrue
+		else:
+			new_iftrue=statement.iftrue
+			
+		if type(statement.iffalse) is c_ast.Compound:
+			if len(statement.iffalse.block_items)==0:
+				new_iffalse=None
+			else:
+				new_iffalse=statement.iffalse
+		elif type(statement.iffalse) is c_ast.If:
+			result=removeEmptyIfLoop_If(statement.iffalse)
+			if result is not None:
+				new_iffalse=result
+		else:
+			new_iffalse=statement.iffalse
+	
+	if new_iftrue is not None and new_iffalse is None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
+	elif new_iftrue is not None and new_iffalse is not None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.Compound:
+		return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=new_iffalse, iffalse=None)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.If:
+		return new_iffalse
+	else:
+		return None
