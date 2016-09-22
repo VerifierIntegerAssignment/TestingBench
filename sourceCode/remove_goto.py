@@ -1299,6 +1299,7 @@ def addingBreakVariables(statements,new_break_map):
 		new_variable[variable]=variable
 		new_block=[]
 		new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=variable), rvalue=c_ast.Constant(type='int', value='0')))
+		new_block.append(c_ast.Break())
 		new_iftrue=c_ast.Compound(block_items=new_block)
 		statements.append(c_ast.If(cond=c_ast.BinaryOp(op='==', left=c_ast.ID(name=variable), right=c_ast.Constant(type='int', value='1')), iftrue=new_iftrue, iffalse=None))
 	return statements
