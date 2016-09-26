@@ -84,10 +84,7 @@ def getBreakStmt(statements,break_map):
 					if break_map_temp[var_name]=='Break':
 						temp_new_condition=c_ast.BinaryOp(op='&&', left=new_condtion, right=c_ast.BinaryOp(op='==', left=c_ast.ID(name=var_name), right=c_ast.Constant(type='int', value='0')))
 						new_condtion=temp_new_condition
-					else:
-						temp_new_condition=c_ast.BinaryOp(op='||', left=new_condtion, right=c_ast.BinaryOp(op='==', left=c_ast.ID(name=var_name), right=c_ast.Constant(type='int', value='1')))
-						new_condtion=temp_new_condition
-
+			
                         for item in new_block_items1:
                             new_block_items2.append(item)
 			if flag==False:
