@@ -3299,7 +3299,8 @@ def translate_Java(file_name):
                                 	parametermap[param.variable.name]=variable
                                         #parametermap[param.variable.name]=param.type         
                                 else:
-                                	variable=variableclass(param.type.name.value, param.type,param.modifiers,param.variable.dimensions,None)
+                                	#variable=variableclass(param.type.name.value, param.type,param.modifiers,param.variable.dimensions,None)
+                                        variable=variableclass(param.variable.name, param.type.name,param.modifiers,param.variable.dimensions,None)
                                         parametermap[param.variable.name]=variable
                                         #parametermap[param.type.name.value]=param.type
                         if method_decl.body is not None:
@@ -3326,7 +3327,7 @@ def translate_Java(file_name):
                 program_dec_end=""
                 for lvap in localvarmap:
                 	var=localvarmap[lvap]
-                	if var is not None and var.getInitialvalue() is not None:
+                	if var is not None and var.getInitialvalue() is not None and type(var.getInitialvalue()) is not m.ArrayCreation:
                 		if program_dec_start=="":
                 			program_dec_start="['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue().value)+"')]"
                 			program_dec_end="]"
@@ -3426,17 +3427,19 @@ def translate_Java(file_name):
                 	str_program=programToinductiveDefination(expressions , allvariable)
                 else:
                 	str_program=program_dec_start+','+programToinductiveDefination(expressions , allvariable)+program_dec_end
+
+                print str_program
                 program=eval(str_program)
-                #print ""
-                #print "Output of The Translator Written By Prof Lin"
-                #print ""
-                #print "Inputs to Translator"
-                #print "Parameter One:"
-                #print program
-                #print "Parameter Two:"
-                #print variablesarray
-                #print "Parameter Two Three:"
-                #print 1             
+                print ""
+                print "Output of The Translator Written By Prof Lin"
+                print ""
+                print "Inputs to Translator"
+                print "Parameter One:"
+                print program
+                print "Parameter Two:"
+                print variablesarray
+                print "Parameter Two Three:"
+                print 1             
                 f,o,a,cm=translate1(program,variablesarray,1)
                 #f,o,a,cm=translate1(program,variablesarray,2)
                 vfacts,constraints=getVariFunDetails(f,o,a,allvariable,opvariablesarray)
@@ -4562,7 +4565,12 @@ def translate_C(file_name):
     parametermap={}
     
     for param_decl in function_decl.type.args.params:
-	variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+    	if type(param_decl.type) is c_ast.ArrayDecl:
+    	    	degree=0
+    	    	data_type,degree=getArrayDetails(param_decl,degree)
+		variable=variableclass(param_decl.name, data_type,None,degree,None)
+	else:
+		variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
         parametermap[param_decl.name]=variable
     function_body = ast.ext[0].body
     localvarmap=getVariables(function_body)
@@ -4624,29 +4632,32 @@ def translate_C(file_name):
                 else:
                     list_parameter+=",'int'"
                 list_parameter+=",'"+allvariable[variable].getVariableType()+"'"
-                key1='at'
-                key2='gt'
+                #key1=str(allvariable[variable].getDimensions())+'array'
+                key1='d'+str(allvariable[variable].getDimensions())+'array'
                 arrayFlag=True
                 if key1 not in variablesarray.keys():
                     count+=1
                     variablesarray[key1]=eval("['_y"+str(count)+"',"+list_parameter+"]")
                     opvariablesarray[key1+"1"]=eval("['_y"+str(count)+"',"+list_parameter+"]")
-                if key2 not in variablesarray.keys():
-                    count+=1
-                    variablesarray[key2]=eval("['_y"+str(count)+"',"+list_parameter+"]")
-                    opvariablesarray[key2+"1"]=eval("['_y"+str(count)+"',"+list_parameter+"]")
         else:
             variablesarray[variable]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
             opvariablesarray[variable+"1"]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
-    if arrayFlag==True:
-        count+=1
-        variablesarray['length']=eval("['_y"+str(count)+"','array','int']")
-        opvariablesarray['length1']=eval("['_y"+str(count)+"','array','int']")
     if program_dec_start=="":
         str_program=programToinductiveDefination_C(expressions , allvariable)
     else:
         str_program=program_dec_start+','+programToinductiveDefination_C(expressions , allvariable)+program_dec_end
+    
     program=eval(str_program)
+    print ""
+    print "Output of The Translator Written By Prof Lin"
+    print ""
+    print "Inputs to Translator"
+    print "Parameter One:"
+    print program
+    print "Parameter Two:"
+    print variablesarray
+    print "Parameter Two Three:"
+    print 1             
     f,o,a,cm=translate1(program,variablesarray,1)
     #f,o,a,cm=translate1(program,variablesarray,2)
     vfacts,constraints=getVariFunDetails(f,o,a,allvariable,opvariablesarray)
@@ -4656,8 +4667,14 @@ def translate_C(file_name):
     writeLogFile( "j2llogs.logs" , getTimeStamp()+"\n End of Translation\n")
     axiom=axiomclass(f,o,a,membermethod.getInputvar(), vfacts, constraints,cm)
     return axiom
-            
     
+    
+def getArrayDetails(statement,degree):
+	if type(statement.type) is c_ast.ArrayDecl:
+		degree=degree+1
+		return getArrayDetails(statement.type,degree)
+	else:
+		return statement.type.type.names[0],degree
 
 
 #Get All Variables
@@ -4669,12 +4686,17 @@ def getVariables(function_body):
         if type(decl) is c_ast.Decl:
             var_type=None
             initial_value=None
-            for child in decl.children():
-                if type(child[1].type) is c_ast.IdentifierType:
-                    var_type=child[1].type.names[0]
-		else:
-                    initial_value=child[1].value
-            variable=variableclass(decl.name, var_type,None,None,initial_value)
+            if type(decl.type) is c_ast.ArrayDecl:
+            	degree=0
+	    	var_type,degree=getArrayDetails(decl,degree)
+		variable=variableclass(decl.name, var_type,None,degree,initial_value)
+	    else:
+            	for child in decl.children():
+                	if type(child[1].type) is c_ast.IdentifierType:
+                    		var_type=child[1].type.names[0]
+			else:
+                    		initial_value=child[1].value
+            	variable=variableclass(decl.name, var_type,None,None,initial_value)
             localvarmap[decl.name]=variable
     return localvarmap
 
@@ -4784,21 +4806,25 @@ def programToinductiveDefination_C(expressions, allvariable):
 			if type(expression.getExpression()) is c_ast.Assignment:
                                 var=None
                                 if type(expression.getExpression().lvalue) is c_ast.ID:
-                                    var=expression.getExpression().lvalue.name 
+                                    var="expres('"+str(expression.getExpression().lvalue.name)+"')"
                                 elif type(expression.getExpression().lvalue) is c_ast.Constant:
-                                    var=expression.getExpression().lvalue.value 
+                                    var="expres('"+str(expression.getExpression().lvalue.value)+"')" 
+                                elif type(expression.getExpression().lvalue) is c_ast.ArrayRef:
+                                    degree=0
+       				    stmt,degree=createArrayList_C(expression.getExpression().lvalue,degree)
+                                    var="expres('d"+str(degree)+'array'+"',["+stmt+"])"
 				if expression.getIsPrime()==False:
                                     if programsstart=="":
-                                        programsstart="['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
+                                        programsstart="['-1','seq',['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
                                         programsend="]"
 				    else:
-					programsstart+=",['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
+					programsstart+=",['-1','seq',['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"
 					programsend+="]"
 				else:
                                     if programsstart=="":
-                                        programsstart+="['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
+                                        programsstart="['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
                                     else:
-                                        programsstart+=",['-1','=',expres('"+str(var)+"'),"+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
+                                        programsstart+=",['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
 		elif type(expression) is blockclass:
 			predicatestmt="['-1','while',"+expressionCreator_C(expression.predicate)+","+programToinductiveDefination_C( expression.getExpression(), allvariable)+"]"
 			if expression.getIsPrime()==False:
@@ -4860,21 +4886,25 @@ def programToinductiveDefinationIfElse_C(expression, allvariable):
 		if type(expression.getExpression()) is c_ast.Assignment:
                         var=None
                         if type(expression.getExpression().lvalue) is c_ast.ID:
-                            var=expression.getExpression().lvalue.name 
+                            var="expres('"+str(expression.getExpression().lvalue.name)+"')"
                         elif type(expression.getExpression().lvalue) is c_ast.Constant:
-                            var=expression.getExpression().lvalue.value 
+                            var="expres('"+str(expression.getExpression().lvalue.value)+"')"
+                        elif type(expression.getExpression().lvalue) is c_ast.ArrayRef:
+			    	degree=0
+			       	stmt,degree=createArrayList_C(expression.getExpression().lvalue,degree)
+    				var="expres('d"+str(degree)+'array'+"',["+stmt+"])"
 			if expression.getIsPrime()==False:
                             if programsstart=="":
-                                programsstart="['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"
+                                programsstart="['-1','seq',['-1','=',"+str(var)+","+str(expressionCreator(expression.getExpression().rhs))+"]"
                                 programsend="]"
 			    else:
-                                programsstart+=",['-1','seq',['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"
+                                programsstart+=",['-1','seq',['-1','=',"+str(var)+","+str(expressionCreator(expression.getExpression().rhs))+"]"
                                 programsend+="]"
                         else:
                             if programsstart=="":
-                                programsstart+="['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
+                                programsstart+="['-1','=',"+str(var)+","+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
                             else:
-                                programsstart+=",['-1','=',expres('"+str(var)+"'),"+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
+                                programsstart+=",['-1','=',"+str(var)+","+str(expressionCreator(expression.getExpression().rhs))+"]"+programsend
 
 	elif type(expression) is blockclass:
 		predicatestmt="['-1','while',"+expressionCreator_C(expression.predicate)+","+programToinductiveDefination_C( expression.getExpression(), allvariable)+"]"
@@ -4933,6 +4963,10 @@ def expressionCreator_C(statement):
         return "expres('"+statement.name+"')"
     elif type(statement) is c_ast.Constant:
         return "expres('"+statement.value+"')"
+    elif type(statement) is c_ast.ArrayRef:
+    	degree=0
+       	stmt,degree=createArrayList_C(statement,degree)
+    	return "expres('d"+str(degree)+'array'+"',["+stmt+"])"
     else:
         if statement.op in ['+','-','*','/','%']:
             expression="expres('"
@@ -4963,6 +4997,24 @@ def expressionCreator_C(statement):
 
 
 
+"""
+
+Construct Array List
+
+"""
+def createArrayList_C(statement,degree):
+	if type(statement) is c_ast.ArrayRef:
+		degree=degree+1
+		stmt=''
+		if type(statement.name) is c_ast.ArrayRef:
+			stmt,degree=createArrayList_C(statement.name,degree)
+			stmt+=",expres('"+statement.subscript.name+"')"
+			return stmt,degree
+		else:
+			stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.name+"')"
+			return stmt,degree
+	else:
+		return "expres('"+statement.name+"')",degree
 
 
     
