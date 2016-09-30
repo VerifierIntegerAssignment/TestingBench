@@ -2398,11 +2398,14 @@ class sortclass(object):
 #Plain Python object to store Information about Member Method of a Java Class 
 """
 class membermethodclass(object):
- 	def __init__(self, methodname, returnType , inputvar, localvar):
+ 	def __init__(self, methodname, returnType , inputvar, localvar, body, usedCounter, serialNo):
         	self.methodname = methodname
         	self.inputvar = inputvar
         	self.returnType = returnType
         	self.localvar = localvar
+        	self.body = body
+        	self.usedCounter = usedCounter
+        	self.serialNo = serialNo
         def getMethodname(self):
         	return self.methodname
         def getreturnType(self):
@@ -2411,6 +2414,22 @@ class membermethodclass(object):
         	return self.inputvar
         def getLocalvar(self):
         	return self.localvar
+        def getBody(self):
+		return self.body
+	def getUsedCounter(self):
+		return self.usedCounter
+	def getSerialNo(self):
+		return self.serialNo
+	def setInputvar(self, inputvar):
+	        self.inputvar=inputvar
+	def setLocalvar(self, localvar):
+	        self.localvar=localvar
+	def setBody(self, body):
+		self.body=body
+	def setUsedCounter(self, usedCounter):
+		self.usedCounter=usedCounter
+	def setSerialNo(self, serialNo):
+		self.serialNo=serialNo
 """
 
 #Variable Class 
@@ -3844,6 +3863,61 @@ def prove(axiom,pre_condition,post_condition):
 				print "Failed to Prove"
 		end_time=current_milli_time()
 		print end_time-start_time
+	
+	
+# Test Case
+
+#function_name='main'
+#pre_condition=[]
+#post_condition=['Z1 == 230']
+
+#function_name='product'
+#pre_condition=['a>=0','b>=0']
+#post_condition=['RET1 == a*b']
+
+#function_name='add'
+#pre_condition=['a>=0','b>=0']
+#post_condition=['RET1 == a+b']
+
+
+		
+def prove_Test(program,function_name,pre_condition,post_condition):
+	if len(post_condition)==0:
+		print "Nothing To Prove"
+		return
+		
+	axiomeMap=program.getAxiomeMap()
+	
+	if axiomeMap is None:
+		print "Something Wrong in Translation"
+		return
+	
+	axiom=axiomeMap[function_name]
+	
+	if axiomeMap is None:
+		print "Something Wrong in Translation"
+		return	
+	
+	if axiom is not None and post_condition is not None:
+		start_time=current_milli_time()
+		writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Prove \n"+"\nParameters--\n"+"\n Pre Condition--"+str(pre_condition)+"\n Post Condition--"+str(post_condition)+"\n Strategy--Direct")
+		status=tactic1(axiom.getFrame_axioms(),axiom.getOutput_equations(),axiom.getOther_axioms(),pre_condition,post_condition,axiom.getVfact(),axiom.getInputvariable(),axiom.getConstraints())
+		
+		if "Successfully Proved" in status:
+			print "Successfully Proved"			
+		elif "Counter Example" in status:
+			print status		
+		else:
+			status=tactic2(axiom.getFrame_axioms(),axiom.getOutput_equations(),axiom.getOther_axioms(),pre_condition,post_condition,axiom.getVfact(),axiom.getInputvariable(),axiom.getConstraints(),axiom.getConst_var_map())
+		
+			if "Successfully Proved" in status:
+				print "Successfully Proved"			
+			elif "Counter Example" in status:
+				print status		
+			else:
+				print "Failed to Prove"
+		end_time=current_milli_time()
+		print end_time-start_time
 
 
 """
@@ -3933,13 +4007,19 @@ def tactic1(f,o,a,pre_condition,conclusions,vfact,inputmap,constaints):
 	frame_axioms=eqset2constraintlist(f)
 	for x in frame_axioms:
 		constraint_list.append(x)
+	
+	
 	out_axioms=eqset2constraintlist(o)
+	
+	
 	subs_list=eqset2subs_list(o)
+	
+	
 	for x in out_axioms:
 		constraint_list.append(x)
 	for x in a: 
         	equations=wff2z3(x)
-        	equations_sp=None	
+        	equations_sp=None
                 constraint_list.append(equations)
                 if x[0]=='s1':
         		equations_sp=wff2z3SC(x)
@@ -4532,49 +4612,258 @@ class cFunctionclass(object):
         	return self.inputvar
         def getLocalvar(self):
         	return self.localvar
+
+
+
+def programTransformation(function_body):
+
+     
+    global break_count
+    global continue_count
+    global new_variable
+    
+    new_variable={}
+        
+    #Syntax translation of the function body
+        
+    statements=syntaxTranslate(function_body.block_items)
+        
+    #Replace return by goto statement
+        
+    statements=remove_return(statements)
+        
+    #Replace goto structured statement
+        
+    statements=gotoremoval(statements)
+        
+    update_statements=[]
+        
+    #Add new variable
+        
+    for var in new_variable.keys():
+    	temp=c_ast.Decl(name=var, quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname=var, quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+    	update_statements.append(temp)
+        	
+    for statement in statements:
+    	update_statements.append(statement)
+        	
+            	
+    #Remove Empty If Loops  
+    
+    update_statements=removeEmptyIfLoop(update_statements)
+        
+    #Remove Dead Code
+        
+    update_statements=removeDeadCode(update_statements)
+        
+    #Simplify Conditions
+        
+    statements=simplifyProgram(update_statements)
+    
+    #Add Break Removal Modules
+    
+    
+    break_map={}
+    break_count=0
+    continue_count=0
+    
+    statements=getBreakStmt(statements,break_map)
+        
+    update_statements=[]
+    
+    for var in new_variable.keys():
+    
+    	temp=c_ast.Decl(name=var, quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname=var, quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+       	update_statements.append(temp)
+        	
+    for statement in statements:
+    	update_statements.append(statement)
+
+    return update_statements
+
+
+
+
+
 			    
 
+#file_name='functionTest2.c'
+
+#file_name='functionTest4.c'
+
+def translate_Test(file_name):
+	if not(os.path.exists(file_name)): 
+        	print "File not exits"
+		return
+
+	start_time=current_milli_time()
+	content=None
+	global new_variable
+	with open(file_name) as f:
+		content = f.read()
+	content=content.replace('\r','')
+	text = r""" """+content
+	parser = c_parser.CParser()
+	#ast = parse_file(file_name, use_cpp=True)
+	ast = parser.parse(text)
+	generator = c_generator.CGenerator()
+	writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Translate \n"+"\nParameters--\n File Name--"+file_name+"\n")
+	if ast is None:
+		print "Error present in code. Please verify you input file"
+	       	return
+	if len(ast.ext)==0:
+		print "Error present in code. Please verify you input file"
+	        return
+    	externalvarmap={}
+	functionvarmap={}
+	memberfunctionmap={}
+	axiomeMap={}
+    	counter=0
+    	for e in ast.ext:
+    		if type(e) is c_ast.Decl:
+    			if type(e.type) is c_ast.FuncDecl:
+    				parametermap={}
+				function_decl=e
+				
+				if function_decl.type.args is not None:
+					for param_decl in function_decl.type.args.params:
+				    		if type(param_decl.type) is c_ast.ArrayDecl:
+				    	    		degree=0
+				    	    		data_type,degree=getArrayDetails(param_decl,degree)
+							variable=variableclass(param_decl.name, data_type,None,degree,None)
+						else:
+							variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+        					parametermap[param_decl.name]=variable
+
+				membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,None,None,0,0)
+				functionvarmap[membermethod.getMethodname()]=membermethod
+    			elif type(e.type) is c_ast.TypeDecl:
+            			var_type=None
+            			initial_value=None
+            			for child in e.children():
+                			if type(child[1].type) is c_ast.IdentifierType:
+                    				var_type=child[1].type.names[0]
+					else:
+                    				initial_value=child[1].value
+            			variable=variableclass(e.name, var_type,None,None,initial_value)
+            			externalvarmap[e.name]=variable
+    		else:
+    			if type(e) is c_ast.FuncDef:
+    				parametermap={}
+    				function_decl=e.decl
+    				function_body = e.body
+    				localvarmap=getVariables(function_body)
+    				counter=counter+1
+    				if function_decl.type.args is not None:
+					for param_decl in function_decl.type.args.params:
+						variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+			    			parametermap[param_decl.name]=variable
+    				if function_decl.name in functionvarmap.keys():
+					membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap,function_body,0,counter)
+					functionvarmap[function_decl.name]=membermethod
+				else:
+					if function_decl.type.args is not None:
+						for param_decl in function_decl.type.args.params:
+							variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+							parametermap[param_decl.name]=variable
+					membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap,function_body,0,counter)
+					functionvarmap[membermethod.getMethodname()]=membermethod
+
+    	print 'Globle Variable'
+    	var_list="{"
+    	for x in externalvarmap:
+    		if externalvarmap[x].getDimensions()>0:
+        		var_list+=' '+x+':array'
+    		else:
+        		var_list+=' '+x+':'+externalvarmap[x].getVariableType()
+    	var_list+='}'
+    	print var_list
+    	for medthod in functionvarmap.keys():
+                membermethod=functionvarmap[medthod]
+    		body=membermethod.getBody()
+    		if body is not None:                            
+                    statements=programTransformation(body)
+                    body_comp = c_ast.Compound(block_items=statements)
+    		    membermethod.setBody(body_comp)
+    		    localvarmap=getVariables(body_comp)
+    		    membermethod.setLocalvar(localvarmap)
+
+                    
+    	for medthod in functionvarmap.keys():
+    		membermethod=functionvarmap[medthod]
+    		body=membermethod.getBody()
+    		if body is not None:
+    			new_variable={}
+    			update_statements=[]
+    			
+    	    		statements=substituteFunBlock(body.block_items,functionvarmap)
+    	    	
+    	    		for var in new_variable.keys():
+		    		temp=c_ast.Decl(name=var, quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname=var, quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+    				update_statements.append(temp)
+    	    		for statement in statements:
+    				update_statements.append(statement)
+	    		body_comp = c_ast.Compound(block_items=update_statements)
+	    		
+    			membermethod.setBody(body_comp)
+    			localvarmap=getVariables(body_comp)
+    			membermethod.setLocalvar(localvarmap)
+                	print "Function Name:"
+                	print membermethod.getMethodname()
+                	print "Return Type:"
+                	print membermethod.getreturnType()
+                	print "Input Variables:"
+                	var_list="{"
+                	for x in membermethod.getInputvar():
+                        	if membermethod.getInputvar()[x].getDimensions()>0:
+                                	var_list+=' '+x+':array'
+                        	else:
+                                	var_list+=' '+x+':'+membermethod.getInputvar()[x].getVariableType()
+                	var_list+='}'
+                	print var_list
+                	print "Local Variables:"
+                	var_list="{"
+                	for x in membermethod.getLocalvar():
+                        	if membermethod.getLocalvar()[x].getDimensions()>0:
+                                	var_list+=' '+x+':array'
+                        	else:
+                                	var_list+=' '+x+':'+membermethod.getLocalvar()[x].getVariableType()
+                	var_list+='}'
+                	print var_list
+                	print 'Function Body'
+    			generator = c_generator.CGenerator()   
+    			#print(generator.visit(body))
+    			membermethod=functionvarmap[medthod]
+    			print(generator.visit(membermethod.getBody()))
+    			
+			axiome=translateBody2Axiom(membermethod.getMethodname(),membermethod.getreturnType(),membermethod.getBody(),membermethod.getInputvar())
+			
+			axiomeMap[membermethod.getMethodname()]=axiome
+			
+    			memberfunctionmap[membermethod.getMethodname()]=membermethod
+    			
+        program=programclass(file_name, memberfunctionmap , externalvarmap, axiomeMap)
+        
+        return program
 
 
 
-def translate_C(file_name):
-    if not(os.path.exists(file_name)): 
-        print "File not exits"
-	return
 
+
+
+
+def translateBody2Axiom(function_name,function_type,function_body,parametermap,):
+    if function_body is None: 
+        print "Empty Body"
+	return None
+        
     start_time=current_milli_time()
-    content=None
-    with open(file_name) as f:
-    	content = f.read()
-    content=content.replace('\r','')
-    text = r""" """+content
-    parser = c_parser.CParser()
-    #ast = parse_file(file_name, use_cpp=True)
-    ast = parser.parse(text)
-    generator = c_generator.CGenerator()
-    writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Translate \n"+"\nParameters--\n File Name--"+file_name+"\n")
-    if ast is None:
-        print "Error present in code. Please verify you input file"
-        return
-    if len(ast.ext)==0:
-        print "Error present in code. Please verify you input file"
-        return
-    generator = c_generator.CGenerator()
-    function_decl = ast.ext[0].decl
     
-    parametermap={}
-    
-    for param_decl in function_decl.type.args.params:
-    	if type(param_decl.type) is c_ast.ArrayDecl:
-    	    	degree=0
-    	    	data_type,degree=getArrayDetails(param_decl,degree)
-		variable=variableclass(param_decl.name, data_type,None,degree,None)
-	else:
-		variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
-        parametermap[param_decl.name]=variable
-    function_body = ast.ext[0].body
+    statements=function_body.block_items
+       
     localvarmap=getVariables(function_body)
-    membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap)
+
+    membermethod=membermethodclass(function_name,function_type,parametermap,localvarmap,function_body,0,0)
     print "Function Name:"
     print membermethod.getMethodname()
     print "Return Type:"
@@ -4613,8 +4902,11 @@ def translate_C(file_name):
         allvariable[x]=membermethod.getInputvar()[x]
     for x in membermethod.getLocalvar():
         allvariable[x]=membermethod.getLocalvar()[x]
+        
     #print getBody(function_body)
-    expressions=organizeStatementToObject_C(function_body.block_items)
+       
+    expressions=organizeStatementToObject_C(statements)
+    
     primeStatement(expressions)
     variablesarray={}
     opvariablesarray={}
@@ -4667,7 +4959,166 @@ def translate_C(file_name):
     writeLogFile( "j2llogs.logs" , getTimeStamp()+"\n End of Translation\n")
     axiom=axiomclass(f,o,a,membermethod.getInputvar(), vfacts, constraints,cm)
     return axiom
+
+
+
+
+
+
+
+    			
+
+def translate_C_Old(file_name):
+    if not(os.path.exists(file_name)): 
+        print "File not exits"
+	return
+    #Global Variables
+    global break_count
+    global continue_count
+    global new_variable
     
+    
+    start_time=current_milli_time()
+    content=None
+    with open(file_name) as f:
+    	content = f.read()
+    content=content.replace('\r','')
+    text = r""" """+content
+    parser = c_parser.CParser()
+    #ast = parse_file(file_name, use_cpp=True)
+    ast = parser.parse(text)
+    generator = c_generator.CGenerator()
+    writeLogFile( "j2llogs.logs" , getTimeStamp()+"\nCommand--Translate \n"+"\nParameters--\n File Name--"+file_name+"\n")
+    if ast is None:
+        print "Error present in code. Please verify you input file"
+        return
+    if len(ast.ext)==0:
+        print "Error present in code. Please verify you input file"
+        return
+    generator = c_generator.CGenerator()
+    function_decl = ast.ext[0].decl
+    
+    parametermap={}
+    if function_decl.type.args is not None:
+    	for param_decl in function_decl.type.args.params:
+    		if type(param_decl.type) is c_ast.ArrayDecl:
+    	    		degree=0
+    	    		data_type,degree=getArrayDetails(param_decl,degree)
+			variable=variableclass(param_decl.name, data_type,None,degree,None)
+		else:
+			variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+        	parametermap[param_decl.name]=variable
+    function_body = ast.ext[0].body
+    
+    
+    new_variable={}
+        
+    #Syntax translation of the function body
+        
+    statements=function_body.block_items
+       
+    localvarmap=getVariables(function_body)
+
+    membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap,body_comp,0,0)
+    print "Function Name:"
+    print membermethod.getMethodname()
+    print "Return Type:"
+    print membermethod.getreturnType()
+    print "Input Variables:"
+    var_list="{"
+    for x in membermethod.getInputvar():
+        if membermethod.getInputvar()[x].getDimensions()>0:
+            var_list+=' '+x+':array'
+	else:
+	    var_list+=' '+x+':'+membermethod.getInputvar()[x].getVariableType()
+    var_list+='}'
+    print var_list
+    print "Local Variables:"
+    var_list="{"
+    for x in membermethod.getLocalvar():
+        if membermethod.getLocalvar()[x].getDimensions()>0:
+            var_list+=' '+x+':array'
+	else:
+            var_list+=' '+x+':'+membermethod.getLocalvar()[x].getVariableType()
+    var_list+='}'
+    print var_list
+    allvariable={}
+    program_dec_start=""
+    program_dec_end=""
+    for lvap in localvarmap:
+        var=localvarmap[lvap]
+        if var is not None and var.getInitialvalue() is not None:
+            if program_dec_start=="":
+                program_dec_start="['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue())+"')]"
+                program_dec_end="]"
+            else:
+                program_dec_start+=",['-1','seq',['-1','=',expres('"+str(var.getVariablename())+"'),"+"expres('"+str(var.getInitialvalue())+"')]"
+                program_dec_end+="]"
+    for x in membermethod.getInputvar():
+        allvariable[x]=membermethod.getInputvar()[x]
+    for x in membermethod.getLocalvar():
+        allvariable[x]=membermethod.getLocalvar()[x]
+        
+    #print getBody(function_body)
+       
+    expressions=organizeStatementToObject_C(statements)
+    
+    primeStatement(expressions)
+    variablesarray={}
+    opvariablesarray={}
+    count=0
+    arrayFlag=False
+    for variable in allvariable:
+        count+=1
+        if allvariable[variable].getDimensions()>0:
+            variablesarray[variable]=eval("['_y"+str(count)+"','array']")
+            opvariablesarray[variable+"1"]=eval("['_y"+str(count)+"','array']")
+            list_parameter="'array'"
+            for i in range(0, allvariable[variable].getDimensions()):
+                if list_parameter=='':
+                    list_parameter="'int'"
+                else:
+                    list_parameter+=",'int'"
+                list_parameter+=",'"+allvariable[variable].getVariableType()+"'"
+                #key1=str(allvariable[variable].getDimensions())+'array'
+                key1='d'+str(allvariable[variable].getDimensions())+'array'
+                arrayFlag=True
+                if key1 not in variablesarray.keys():
+                    count+=1
+                    variablesarray[key1]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+                    opvariablesarray[key1+"1"]=eval("['_y"+str(count)+"',"+list_parameter+"]")
+        else:
+            variablesarray[variable]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
+            opvariablesarray[variable+"1"]=eval("['_y"+str(count)+"','"+allvariable[variable].getVariableType()+"']")
+    if program_dec_start=="":
+        str_program=programToinductiveDefination_C(expressions , allvariable)
+    else:
+        str_program=program_dec_start+','+programToinductiveDefination_C(expressions , allvariable)+program_dec_end
+    
+    program=eval(str_program)
+    print ""
+    print "Output of The Translator Written By Prof Lin"
+    print ""
+    print "Inputs to Translator"
+    print "Parameter One:"
+    print program
+    print "Parameter Two:"
+    print variablesarray
+    print "Parameter Two Three:"
+    print 1             
+    f,o,a,cm=translate1(program,variablesarray,1)
+    #f,o,a,cm=translate1(program,variablesarray,2)
+    vfacts,constraints=getVariFunDetails(f,o,a,allvariable,opvariablesarray)
+    end_time=current_milli_time()
+    print "Times to Translate"
+    print end_time-start_time
+    writeLogFile( "j2llogs.logs" , getTimeStamp()+"\n End of Translation\n")
+    axiom=axiomclass(f,o,a,membermethod.getInputvar(), vfacts, constraints,cm)
+    return axiom
+ 
+ 
+ 
+ 
     
 def getArrayDetails(statement,degree):
 	if type(statement.type) is c_ast.ArrayDecl:
@@ -5018,12 +5469,2496 @@ def createArrayList_C(statement,degree):
 
 
     
-    
+"""
  
+Translate Syntax Code 
+ 
+"""
+ 
+
+"""
+
+Syntax translation module
+
+"""
+
+
+
+def syntaxTranslate(statements):
+        update_statements=[]
+        for statement in statements:
+                if type(statement) is c_ast.UnaryOp:
+                        if statement.op=='++' or statement.op=='p++':
+                                update_statements.append(c_ast.Assignment(op='=',lvalue=statement.expr, rvalue=c_ast.BinaryOp(op='+',left=statement.expr, right=c_ast.Constant('int','1'))))
+                        elif statement.op=='--' or statement.op=='p--':
+                                update_statements.append(c_ast.Assignment(op='=',lvalue=statement.expr, rvalue=c_ast.BinaryOp(op='-',left=statement.expr, right=c_ast.Constant('int','1'))))
+                        else:
+                                update_statements.append(statement)
+                elif type(statement) is c_ast.For:
+                        update_statements.append(statement.init)
+                        new_block_items=statement.stmt.block_items
+                        new_block_items.append(statement.next)
+                        new_block_items=syntaxTranslate(new_block_items)
+                        new_stmt=c_ast.Compound(block_items=new_block_items)
+                        update_while=c_ast.While(statement.cond,new_stmt)
+                        update_statements.append(update_while)
+                elif type(statement) is c_ast.DoWhile:
+		        new_block_items=statement.stmt.block_items
+		        for item in new_block_items:
+		        	update_statements.append(item)
+		        new_block_items=syntaxTranslate(new_block_items)
+		        new_stmt=c_ast.Compound(block_items=new_block_items)
+		        update_while=c_ast.While(statement.cond,new_stmt)
+                        update_statements.append(update_while)
+                elif type(statement) is c_ast.Switch:
+                	stmts=statement.stmt.block_items
+                	statement=convertToIfElse(stmts,statement.cond)
+                	update_statements.append(statement)
+                else:
+                        update_statements.append(statement)
+        return update_statements
+
+
+
+"""
+
+Covert Switch Case to If-Else-If loop
+
+"""
+
+
+
+def convertToIfElse(statements,condition):
+	if statements is not None and len(statements)>0:
+		statement=statements[0]
+		if type(statement) is not c_ast.Default:
+			new_condition_left=constructCondition(statements,condition)
+			new_condition_right,new_block_items,statements,is_break=constructBody(statements,condition)
+			new_compund_left=c_ast.Compound(block_items=new_block_items)
+			
+			if new_condition_left is not None:
+				new_Else_stmt=convertToIfElse(statements,condition)
+				new_If_stmt=c_ast.If(cond=c_ast.BinaryOp(op='||', left=new_condition_left, right=new_condition_right),iftrue=new_compund_left,iffalse=new_Else_stmt)
+				return new_If_stmt
+			else:
+				new_Else_stmt=convertToIfElse(statements,condition)
+				new_If_stmt=c_ast.If(cond=new_condition_right,iftrue=new_compund_left,iffalse=new_Else_stmt)
+				return new_If_stmt
+		else:
+			update_stmts=[]
+			for stmt in statement.stmts:
+				if type(stmt) is not c_ast.Break:
+					update_stmts.append(stmt)
+			return c_ast.Compound(block_items=update_stmts)
+		
+
+	return None
+
+
+"""
+
+Covert Switch Case to If-Else-If loop
+
+"""
+
+	
+def constructCondition(statements,condition):
+	if statements is not None and len(statements)>0:
+		statement=statements[0]
+		if type(statement) is not c_ast.Default:
+			if len(statement.stmts)==0:
+				new_condition_left=c_ast.BinaryOp(op='==', left=condition, right=statement.expr)
+				new_condition_right=constructCondition(statements[1:],condition)
+				if new_condition_right is None:
+					return new_condition_left
+				else:
+					return c_ast.BinaryOp(op='||', left=new_condition_left, right=new_condition_right)
+			else:
+				return None
+		else:
+			return None
+	return None
+
+
+"""
+
+Covert Switch Case to If-Else-If loop
+
+"""
+
+
+def constructBody(statements,condition):
+	if statements is not None and len(statements)>0:
+		statement=statements[0]
+		if type(statement) is not c_ast.Default:
+			if len(statement.stmts)>0:
+				update_stmts=[]
+				new_condition=c_ast.BinaryOp(op='==', left=condition, right=statement.expr)
+				is_break=False
+				for stmt in statement.stmts:
+					if type(stmt) is c_ast.Break:
+						is_break=True;
+					else:
+						update_stmts.append(stmt)
+				return new_condition,update_stmts,statements[1:],is_break
+			else:
+				return constructBody(statements[1:],condition)
+		else:
+			return None,None,None,False
+	return None,None,None,False
+
 
 
 			    
+"""
+ 
+Goto removal Modules Start
+
+"""
+
+new_variable={}
+
+break_count=0
+
+continue_count=0
+
+
+
+def remove_return(statements):
+	end_label_map={}
+	statements=returnReplacement(statements,end_label_map)
+	update_statements=[]
+	temp=c_ast.Decl(name='RET', quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname='RET', quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+	update_statements.append(temp)
+	for statement in statements:
+		update_statements.append(statement)
+	for label in end_label_map.keys():
+    		update_statements.append(c_ast.Label(name=label, stmt=None))
+    	return update_statements
+
+
+
+
+
+
+
+
+"""
+
+Method for simplification of Condition
+
+"""
+
+def simplifyCondition(statement):
+	if type(statement) is c_ast.UnaryOp:
+		if statement.op=='!': 
+			return getComplement(statement.expr)
+		else:
+			return c_ast.UnaryOp(op=statement.op,expr=simplifyCondition(statement.expr))
+	elif type(statement) is c_ast.BinaryOp:
+		return c_ast.BinaryOp(op=statement.op,left=simplifyCondition(statement.left), right=simplifyCondition(statement.right))
+	else:
+		return statement
+
+"""
+
+Method for Generate  Complement of Condition
+
+"""
+
+
+def getComplement(statement):
+	print statement.show()
+	if type(statement) is c_ast.UnaryOp:
+		if statement.op=='!': 
+			return simplifyCondition(statement.expr)
+		else:
+			return c_ast.UnaryOp(op=statement.op,expr=simplifyCondition(statement.expr))
+	
+	elif type(statement) is c_ast.BinaryOp:
+		if statement.op=='<':
+			return c_ast.BinaryOp(op='>=',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='>':
+			return c_ast.BinaryOp(op='<=',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='<=':
+			return c_ast.BinaryOp(op='>',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='>=':
+			return c_ast.BinaryOp(op='<',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='!=':
+			return c_ast.BinaryOp(op='==',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='==':
+			return c_ast.BinaryOp(op='!=',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='&&':
+			return c_ast.BinaryOp(op='||',left=getComplement(statement.left), right=getComplement(statement.right))
+		elif statement.op=='||':
+			return c_ast.BinaryOp(op='&&',left=getComplement(statement.left), right=getComplement(statement.right))
+		else:
+			return c_ast.BinaryOp(op=statement.op,left=getComplement(statement.left), right=getComplement(statement.right))
+
+
+	else:
+		return statement
+
+
+
+
+"""
+
+For Whole program
+
+"""
+
+
+def simplifyProgram(statements):
+	if statements is not None:
+		update_statements=[]
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				update_statements.append(simplifyProgram_If(statement))
+			elif type(statement) is c_ast.While:
+				update_statements.append(c_ast.While(cond=simplifyCondition(statement.cond),stmt=c_ast.Compound(block_items=simplifyProgram(statement.stmt.block_items))))
+			else:
+				update_statements.append(statement)
+		return update_statements			
+	return None
+
+
+
+def simplifyProgram_If(statement):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			if statement.iftrue.block_items is not None:
+				new_iftrue=c_ast.Compound(block_items=simplifyProgram(statement.iftrue.block_items))
+			else:
+				new_iftrue=statement.iftrue
+		else:
+			new_iftrue=statement.iftrue
+		if type(statement.iffalse) is c_ast.Compound:
+			if statement.iffalse.block_items is not None:
+				new_iffalse=c_ast.Compound(block_items=simplifyProgram(statement.iffalse.block_items))
+			else:
+				new_iftrue=statement.iffalse
+		elif type(statement.iffalse) is c_ast.If:
+			new_iffalse=simplifyProgram_If(statement.iffalse)
+		else:
+			new_iffalse=statement.iffalse
+	return c_ast.If(cond=simplifyCondition(statement.cond),iftrue=new_iftrue,iffalse=new_iffalse)
+
+
+
+def removeDeadCode(statements):
+	update_statements=[]
+	flag=False
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.Goto:
+				flag=True
+			elif type(statement) is c_ast.Label:
+				flag=False
+				stmts=statement.stmt
+				if stmts is not None:
+					for stmt in stmts:
+						update_statements.append(stmt)
+			else:
+				if flag==False:
+					update_statements.append(statement)
+	return update_statements
+
+
+def gotoremoval(statements):
+	if statements is not None:
+		label_map=constructLabelTable(statements,0,0,0)
+		updateLabelTable(statements,0,0,0,label_map)
+		keys=label_map.keys()
+		if len(keys)>0:
+			item=keys[0]
+			element = label_map[item]
+    			lists = element[3]
+    			for list in lists:
+    				if element[0]>=list[0] and element[1]>=list[1]:
+        				statements=goto_finder(statements,item)
+    					statements=go_block_finder(statements,item)
+    					statements=gotoremoval(statements)
+    				else:
+    					statements=label_finder(statements,item)
+    					statements=go_block_finder(statements,item)
+    					statements=gotoremoval(statements)
+    	return statements
+
+
+
+
+
+#Finding Goto in a Block to Call gotomovein
+#Parameter pass block of statement 
+#Label
+
+
+def go_block_finder(statements,label):
+	if statements is not None:
+		flag_block_label=check_label_block(statements,label)  
+		flag_block_goto=check_goto_block_Sp(statements,label)
+		if flag_block_label==True and flag_block_goto==True:
+			return remove_goto_block(statements,label)
+		else:
+			update_statements=[]
+			for statement in statements:
+				if type(statement) is c_ast.If:
+					update_statements.append(go_block_finder_if(statement,label))
+				elif type(statement) is c_ast.While:
+					update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=go_block_finder(statement.stmt.block_items,label))))
+				else:
+					update_statements.append(statement)
+		return update_statements
+	return statements
+				
+
+
+#Finding Goto in a If Block to Call gotomovein
+#Parameter pass statement 
+#Label
+
+def go_block_finder_if(statement,label):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			if statement.iftrue.block_items is not None:
+				new_iftrue=c_ast.Compound(block_items=go_block_finder(statement.iftrue.block_items,label))
+			else:
+				new_iftrue=statement.iftrue
+		else:
+			new_iftrue=statement.iftrue
+		if type(statement.iffalse) is c_ast.Compound:
+			if statement.iffalse.block_items is not None:
+				new_iffalse=c_ast.Compound(block_items=go_block_finder(statement.iffalse.block_items,label))
+			else:
+				new_iftrue=statement.iffalse
+		elif type(statement.iffalse) is c_ast.If:
+			new_iffalse=go_block_finder_if(statement.iffalse,label)
+		else:
+			new_iffalse=statement.iffalse
+	return c_ast.If(cond=statement.cond,iftrue=new_iftrue,iffalse=new_iffalse)
+
+
+
+
+
+
+#Method to Remove Goto 
+
+
+def remove_goto_block(statements,label): 
+	flag_block_label=check_label_block(statements,label)  
+	flag_block_goto=check_goto_block_Sp(statements,label)
+	flag_block2,condition=check_goto(statements,label)
+	flag_label=False
+	flag_goto=False
+	new_statements1=[]
+	new_statements2=[]
+	if flag_block_label==True and flag_block_goto==True:
+		for statement in statements:
+			if type(statement) is c_ast.Label:
+				if label==statement.name:
+					if flag_goto==True:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2),iffalse=None))
+						if type(statement.stmt) is c_ast.Assignment:
+							new_statements1.append(statement.stmt)
+						elif type(statement.stmt) is c_ast.Compound:
+							if statement.stmt is not None and statement.stmt.block_items is not None:
+								for stmt in statement.stmt.block_items:
+									new_statements1.append(stmt)
+						flag_label=False
+						flag_goto=False
+					else:
+						if type(statement.stmt) is c_ast.Assignment:
+							new_statements2.append(statement.stmt)
+						elif type(statement.stmt) is c_ast.Compound:
+							if statement.stmt is not None and statement.stmt.block_items is not None:
+								for stmt in statement.stmt.block_items:
+									new_statements2.append(stmt)
+						flag_label=True
+				else:
+					if flag_goto==True or flag_label==True:
+						if type(statement.stmt) is c_ast.Assignment:
+							new_statements2.append(statement.stmt)
+						elif type(statement.stmt) is c_ast.Compound:
+							if statement.stmt is not None and statement.stmt.block_items is not None:
+								for stmt in statement.stmt.block_items:
+									new_statements2.append(stmt)
+					else:
+						new_statements1.append(statement)
+			elif type(statement) is c_ast.If:
+				flag_block_goto=check_goto_block_If(statement,label)
+				if flag_block_goto:
+					if flag_label==True:
+						statement=getRidOfGoto(statement,label)
+						for stmt in new_statements2:
+							new_statements1.append(stmt)
+						new_statements1.append(statement)
+						
+						new_break_map={}
+						new_statements2=reOrganizeBreaks(new_statements2,new_break_map)
+
+						new_statements1.append(c_ast.While(cond=condition, stmt=c_ast.Compound(block_items=new_statements2)))
+						new_statements1=addingBreakVariables(new_statements1,new_break_map)
+						flag_label=False
+						flag_goto=False
+					else:
+						statement=getRidOfGoto(statement,label)
+						new_statements1.append(statement)
+						flag_goto=True
+				else:
+					if flag_goto==True or flag_label==True:
+						new_statements2.append(statement)
+					else:
+						new_statements1.append(statement)
+			else:
+				if flag_goto==True or flag_label==True:
+					new_statements2.append(statement)
+				else:
+					new_statements1.append(statement)
+	
+	return new_statements1
+				
+				
+
+
+
+    
+    
+def constructLabelTable(statements,level,block,lineCount):
+	label_map={}
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				label_map_temp=constructLabelTable_If(statement,level,block,lineCount)
+	            		for item in label_map_temp:
+            				label_map[item]=label_map_temp[item]
+			elif type(statement) is c_ast.Label:
+				lineCount=lineCount+1
+			        info=[]
+			        info.append(level)
+	            		info.append(block)
+	            		info.append(lineCount)
+	            		info.append([])
+				label_map[statement.name]=info
+	        	else:
+	        		if type(statement) is c_ast.While:
+	        			level=level+1
+	            			label_map_temp=constructLabelTable(statement.stmt.block_items,level,block,lineCount)
+	            			for item in label_map_temp:
+            					label_map[item]=label_map_temp[item]
+            				level=level-1
+            			else:
+            				lineCount=lineCount+1
+	return label_map
+
+
+
+
+def constructLabelTable_If(statement,level,block,lineCount):
+	label_map={}
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Label:
+				label_map[statement.iftrue.name]=statement.iftrue.name
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Label:
+							lineCount=lineCount+1	            				
+	            					info=[]
+	            					info.append(level)
+	            					info.append(block)
+	            					info.append(lineCount)
+	            					info.append([])
+	            					label_map[element.name]=info
+	            				elif type(element) is c_ast.If:
+	            					block=block+1
+							label_map_temp=constructLabelTable_If(element,level,block,lineCount)
+							for item in label_map_temp:
+            							label_map[item]=label_map_temp[item]
+            						block=block-1
+						else:
+							if type(element) is c_ast.While:
+								level=level+1
+						        	label_map_temp=constructLabelTable(element.stmt.block_items,level,block,lineCount)
+						        	for item in label_map_temp:
+					            			label_map[item]=label_map_temp[item]
+            							level=level-1
+            						else:
+            							lineCount=lineCount+1
+	
+			if type(statement.iffalse) is c_ast.Label:
+				label_map[statement.iffalse.name]=statement.iffalse.name
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Label:
+	            					lineCount=lineCount+1
+	            					info=[]
+							info.append(level)
+	            					info.append(block)
+	            					info.append(lineCount)
+	            					info.append([])
+	            					label_map[element.name]=info
+	            				elif type(element) is c_ast.If:
+	            					block=block+1
+							label_map_temp=constructLabelTable_If(element,level,block,lineCount)
+							for item in label_map_temp:
+            							label_map[item]=label_map_temp[item]
+            						block=block-1
+						else:
+							if type(element) is c_ast.While:
+								level=level+1
+						        	label_map_temp=constructLabelTable(element.stmt.block_items,level,block,lineCount)
+						        	for item in label_map_temp:
+					            			label_map[item]=label_map_temp[item]
+            							level=level-1
+            						else:
+            							lineCount=lineCount+1
+				else:
+					if type(statement.iffalse) is c_ast.If:
+						label_map_temp=constructLabelTable_If(statement.iffalse,level,block,lineCount)
+						for item in label_map_temp:
+							label_map[item]=label_map_temp[item]
+	return label_map
+
+    
+    
+
+def updateLabelTable(statements,level,block,lineCount,label_map):
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				updateLabelTable_If(statement,level,block,lineCount,label_map)
+	        	else:
+	        		if type(statement) is c_ast.While:
+	        			level=level+1
+	            			updateLabelTable(statement.stmt.block_items,level,block,lineCount,label_map)
+            				level=level-1
+            			else:
+            				lineCount=lineCount+1
+
+
+
+
+
+def updateLabelTable_If(statement,level,block,lineCount,label_map):
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Goto:
+				lineCount=lineCount+1	            				
+				info=[]
+				info.append(level)
+				info.append(block)
+				info.append(lineCount)
+				info.append(statement.cond)
+				if statement.iftrue.name in label_map.keys():
+					info_update=label_map[statement.iftrue.name]
+				        list=info_update[3]
+	            			list.append(info)
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Goto:
+							lineCount=lineCount+1	            				
+	            					info=[]
+	            					info.append(level)
+	            					info.append(block)
+	            					info.append(lineCount)
+	            					info.append(statement.cond)
+	            					if element.name in label_map.keys():
+	            						info_update=label_map[element.name]
+	            						list=info_update[3]
+	            						list.append(info)
+	            				elif type(element) is c_ast.If:
+	            					block=block+1
+							updateLabelTable_If(element,level,block,lineCount,label_map)
+            						block=block-1
+						else:
+							if type(element) is c_ast.While:
+								level=level+1
+						        	updateLabelTable(element.stmt.block_items,level,block,lineCount,label_map)
+            							level=level-1
+            						else:
+            							lineCount=lineCount+1
+	
+			if type(statement.iffalse) is c_ast.Goto:
+				lineCount=lineCount+1	            				
+				info=[]
+				info.append(level)
+				info.append(block)
+				info.append(lineCount)
+				info.append(statement.cond)
+				if statement.iffalse.name in label_map.keys():
+					info_update=label_map[statement.iffalse.name]
+					list=info_update[3]
+	            			list.append(info)
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Goto:
+	            					lineCount=lineCount+1
+	            					info=[]
+							info.append(level)
+	            					info.append(block)
+	            					info.append(lineCount)
+	            					info.append(statement.cond)
+	            					if element.name in label_map.keys():
+	            						info_update=label_map[element.name]
+	            						list=info_update[3]
+	            						list.append(info)
+	            				elif type(element) is c_ast.If:
+	            					block=block+1
+							updateLabelTable_If(element,level,block,lineCount,label_map)
+            						block=block-1
+						else:
+							if type(element) is c_ast.While:
+								level=level+1
+						        	updateLabelTable(element.stmt.block_items,level,block,lineCount,label_map)
+            							level=level-1
+            						else:
+            							lineCount=lineCount+1
+				else:
+					if type(statement.iffalse) is c_ast.If:
+						updateLabelTable_If(statement.iffalse,level,block,lineCount,label_map)
+					
+					
+#Check a label in a block of statement
+
+
+def check_label_block(statements,label):
+        status=False
+	for statement in statements:
+		if type(statement) is c_ast.If:
+                        temp_status=check_label_block_If(statement,label)
+                        if temp_status==True:
+                               status=True 
+		elif type(statement) is c_ast.Label:
+                        if statement.name==label:
+                                status = True
+	return status
+	
+
+
+
+def check_label_block_sp(statements,label):
+        status=False
+	for statement in statements:
+		if type(statement) is c_ast.Label:
+                        if statement.name==label:
+                                status = True
+	return status
+
+#Check a label in the blocks of statement of if loop
+	
+def check_label_block_If(statement,label):
+        status=False
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Label:
+				if statement.iftrue.name==label:
+                                        status = True
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Label:
+                                                        if element.name==label:
+                                                                status = True
+                                                                
+			if type(statement.iffalse) is c_ast.Label:
+                                if statement.iffalse.name==label:
+                                        status = True
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Label:
+	            					if element.name==label:
+                                                                status = True
+				else:
+					if type(statement.iffalse) is c_ast.If:
+						temp_status = check_label_block_If(statement.iffalse,label)
+						if temp_status==True:
+                                                	status=True
+	return status
+
+
+
+#Check a label in statement
+
+
+def check_label(statements,label):
+        status=False
+	for statement in statements:
+		if type(statement) is c_ast.If:
+                        temp_status=check_label_If(statement,label)
+                        if temp_status==True:
+                               status=True 
+		elif type(statement) is c_ast.Label:
+                        if statement.name==label:
+                                status = True
+	        else:
+	        	if type(statement) is c_ast.While:
+	            		temp_status= check_label(statement.stmt.block_items,label)
+	            		if temp_status==True:
+                                        status=True
+	return status
+
+
+
+
+#Check a label in statement of if loop
+
+def check_label_If(statement,label):
+        status=False
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Label:
+				if statement.iftrue.name==label:
+                                        status = True
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Label:
+                                                        if element.name==label:
+                                                                status = True
+	            				elif type(element) is c_ast.If:
+							temp_status = check_label_If(element,label)
+							if temp_status==True:
+                                                               status=True
+						else:
+							if type(element) is c_ast.While:
+						        	temp_status = check_label(element.stmt.block_items,label)
+						        	if temp_status==True:
+                                                                        status=True
+	
+			if type(statement.iffalse) is c_ast.Label:
+                                if statement.iffalse.name==label:
+                                        status = True
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Label:
+	            					if element.name==label:
+                                                                status = True
+	            				elif type(element) is c_ast.If:
+                                                        temp_status = check_label_If(element,label)
+                                                        if temp_status==True:
+                                                                status=True
+						else:
+							if type(element) is c_ast.While:
+								temp_status = check_label(element.stmt.block_items,label)
+								if temp_status==True:
+                                                                        status=True
+
+				else:
+					temp_status = check_label_If(statement.iffalse,label)
+					if temp_status==True:
+                                                status=True
+	return status
+
+
+
+
+
+#Check a goto-label in a block of statement
+
+
+def check_goto_block(statements,label):
+        status=False
+	for statement in statements:
+		if type(statement) is c_ast.Goto:
+                        if statement.name==label:
+                                status = True
+
+	return status
+
+
+def check_goto_block_Sp(statements,label):
+        status=False
+	for statement in statements:
+		if type(statement) is c_ast.Goto:
+                        if statement.name==label:
+                                status = True
+               	elif type(statement) is c_ast.If:
+                	temp_status=check_goto_block_If(statement,label)
+                	if temp_status==True:
+                		status=True
+	return status
+	
+	
+
+#Check a label in the blocks of statement of if loop
+	
+def check_goto_block_If(statement,label):
+        status=False
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Goto:
+				if statement.iftrue.name==label:
+                                        status = True
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Goto:
+                                                        if element.name==label:
+                                                                status = True
+                                                                
+			if type(statement.iffalse) is c_ast.Label:
+                                if statement.iffalse.name==label:
+                                        status = True
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Goto:
+	            					if element.name==label:
+                                                                status = True
+				else:
+					if type(statement.iffalse) is c_ast.If:
+						temp_status = check_goto_block_If(statement.iffalse,label)
+						if temp_status==True:
+                                                	status=True
+	return status
+
+
+
+#Check a label in statement
+
+
+def check_goto(statements,label):
+        status=False
+        condition=None
+	for statement in statements:
+		if type(statement) is c_ast.If:
+                        temp_status,temp_cond=check_goto_If(statement,label)
+                        if temp_status==True:
+                               status=True
+                               condition=temp_cond
+		elif type(statement) is c_ast.Goto:
+                        if statement.name==label:
+                                status = True
+	        else:
+	        	if type(statement) is c_ast.While:
+	            		temp_status,temp_cond= check_goto(statement.stmt.block_items,label)
+	            		if temp_status==True:
+                                        status=True
+                                        condition=temp_cond
+	return status,condition
+
+
+
+
+#Check a label in statement of if loop
+
+def check_goto_If(statement,label):
+        status=False
+        condition=None
+	if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Goto:
+				if statement.iftrue.name==label:
+                                        status = True
+                                        condition=statement.cond
+			else:
+	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+	            			for element in statement.iftrue.block_items:
+	            				if type(element) is c_ast.Goto:
+                                                        if element.name==label:
+                                                                status = True
+                                                                condition=statement.cond
+	            				elif type(element) is c_ast.If:
+							temp_status,temp_cond = check_goto_If(element,label)
+							if temp_status==True:
+                                                               status=True
+                                                               #condition=temp_cond
+                                                               condition=c_ast.BinaryOp(op='&&', left=temp_cond, right=statement.cond)
+						else:
+							if type(element) is c_ast.While:
+						        	temp_status,temp_cond = check_goto(element.stmt.block_items,label)
+						        	if temp_status==True:
+                                                                        status=True
+                                                                        condition=temp_cond
+	
+			if type(statement.iffalse) is c_ast.Goto:
+                                if statement.iffalse.name==label:
+                                        status = True
+                                        condition = c_ast.UnaryOp(op='!', expr=statement.cond)
+			else:
+				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+	            			for element in statement.iffalse.block_items:
+	            				if type(element) is c_ast.Goto:
+	            					if element.name==label:
+                                                                status = True
+                                                                condition = c_ast.UnaryOp(op='!', expr=statement.cond)
+	            				elif type(element) is c_ast.If:
+                                                        temp_status,temp_cond = check_goto_If(element,label)
+                                                        if temp_status==True:
+                                                                status=True
+                                                                #condition=temp_cond
+                                                                condition=c_ast.BinaryOp(op='&&', left=temp_cond, right=c_ast.UnaryOp(op='!', expr=statement.cond))
+						else:
+							if type(element) is c_ast.While:
+								temp_status,temp_cond = check_goto(element.stmt.block_items,label)
+								if temp_status==True:
+                                                                        status=True
+                                                                        condition=temp_cond
+
+				else:
+					temp_status,temp_cond = check_goto_If(statement.iffalse,label)
+					if temp_status==True:
+                                                status=True
+                                                #condition=temp_cond
+                                                condition=c_ast.BinaryOp(op='&&', left=temp_cond, right=c_ast.UnaryOp(op='!', expr=statement.cond))
+	return status,condition
+
+
+
+
+
+
+#Finding Goto in a Block to Call gotomovein
+#Parameter pass block of statement 
+#Label
+
+
+def label_finder(statements,label):
+	if statements is not None:
+		flag_block1=check_label_block(statements,label)
+		if flag_block1==True:
+			return gotomoveout(statements,label)
+		else:
+			update_statements=[]
+			if statements is not None:
+				for statement in statements:
+					if type(statement) is c_ast.If:
+						update_statements.append(label_finder_if(statement,label))
+					elif type(statement) is c_ast.While:
+						update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=label_finder(statement.stmt.block_items,label))))
+					else:
+						update_statements.append(statement)
+				return update_statements
+			return statements
+	return statements
+				
+
+
+#Finding Goto in a If Block to Call gotomovein
+#Parameter pass statement 
+#Label
+
+def label_finder_if(statement,label):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			if statement.iftrue.block_items is not None:
+				new_iftrue=c_ast.Compound(block_items=label_finder(statement.iftrue.block_items,label))
+			else:
+				new_iftrue=statement.iftrue
+		else:
+			new_iftrue=statement.iftrue
+		if type(statement.iffalse) is c_ast.Compound:
+			if statement.iffalse.block_items is not None:
+				new_iffalse=c_ast.Compound(block_items=label_finder(statement.iffalse.block_items,label))	
+			else:
+				new_iffalse=statement.iffalse
+		elif type(statement.iffalse) is c_ast.If:
+			new_iffalse=label_finder_if(statement.iffalse,label)
+		else:
+			new_iffalse=statement.iffalse
+	return c_ast.If(cond=statement.cond,iftrue=new_iftrue,iffalse=new_iffalse)
+
+
+
+
+
+
+#Method to Move Goto Outside
+#Parameter pass statement 
+#Label
+
+
+def gotomoveout(statements,label):
+	flag_block1=check_label_block(statements,label)
+	update_statements=[]
+	condition=None
+	if flag_block1==True:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				flag_block2,condition=check_goto_If(statement,label)
+				flag_stmt2=check_goto_block_If(statement,label)
+				if flag_block2==True and flag_stmt2==False:
+					statement=gotomoveoutrec_if(statement,label)
+			                update_statements.append(statement)
+			                update_statements.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+				elif flag_block2==True and flag_stmt2==True:
+					statement=getRidOfGoto(statement,label)
+			                if statement is not None:
+			                	update_statements.append(statement)
+			                	update_statements.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+			        else:
+					update_statements.append(statement)
+			
+			elif type(statement) is c_ast.While:
+				flag_block2,condition=check_goto(statement.stmt.block_items,label)
+				flag_stmt2=check_goto_block(statement.stmt.block_items,label)
+				if flag_block2==True and flag_stmt2==False:
+					stmts=gotomoveoutrec(statement.stmt.block_items,label)
+					stmts.append(c_ast.If(cond=condition, iftrue=c_ast.Break(), iffalse=None))
+					statement=c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=stmts))
+					update_statements.append(statement)
+					update_statements.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+				elif flag_block2==True and flag_stmt2==True:
+			                update_statements.append(statement)
+			        else:
+					update_statements.append(statement)
+			                       
+			else:
+				update_statements.append(statement)
+                                
+		return update_statements
+
+
+
+#Method to Move Goto Outside Recursive
+#Parameter pass statement 
+#Label
+
+def gotomoveoutrec(statements,label):
+	new_statements1=[]
+	new_statements2=[]
+	flag=False
+	condition=None
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			flag_block2,condition=check_goto_If(statement,label)
+			flag_stmt2=check_goto_block_If(statement,label)
+			if flag_block2==True and flag_stmt2==False:
+				statement=gotomoveoutrec_if(statement,label)
+                        	new_statements1.append(statement)
+                        	flag=True
+			elif flag_block2==True and flag_stmt2==True:
+				statement=getRidOfGoto(statement,label)
+                                flag=True
+                                if statement is not None:
+                                	new_statements1.append(statement)
+                        else:
+                        	if flag==True:
+					new_statements2.append(statement)
+				else:
+                        		new_statements1.append(statement)
+
+		elif type(statement) is c_ast.While:
+			flag_block2,condition=check_goto(statement.stmt.block_items,label)
+			flag_stmt2=check_goto_block(statement.stmt.block_items,label)
+			if flag_block2==True and flag_stmt2==False:
+				stmts=gotomoveoutrec(statement.stmt.block_items,label)
+				stmts.append(c_ast.If(cond=condition, iftrue=c_ast.Break(), iffalse=None))
+				statement=c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=stmts))
+				new_statements1.append(statement)
+			elif flag_block2==True and flag_stmt2==True:
+                                flag=True
+                                new_statements1.append(statement)
+                        else:
+                        	if flag==True:
+					new_statements2.append(statement)
+				else:
+                        		new_statements1.append(statement)
+                       
+                else:
+                	if flag==True:
+				new_statements2.append(statement)
+			else:
+                        	new_statements1.append(statement)
+	if condition is not None:
+                if len(new_statements2)>0:
+                	new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+                statements=new_statements1
+        return statements
+
+
+
+#Finding Goto in a Block to Call gotomovein
+#Parameter pass block of statement 
+#Label
+				
+				
+def gotomoveoutrec_if(statement,label):
+	#print statement.show()
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Goto:
+			if statement.iftrue.name==label:
+	                	status = True
+		else:
+		        if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
+		        	flag_block2,condition=check_goto(statement.iftrue.block_items,label)
+				flag_stmt2=check_goto_block(statement.iftrue.block_items,label)
+				if flag_block2==True and flag_stmt2==False:
+					statement.iftrue.block_items=gotomoveoutrec(statement.iftrue.block_items,label)
+					statement.iftrue=c_ast.Compound(block_items=statement.iftrue.block_items)
+				elif flag_block2==True and flag_stmt2==True:
+					statement.iftrue=c_ast.Compound(block_items=statement.iftrue.block_items)
+	                                                                
+		if type(statement.iffalse) is c_ast.Label:
+	        	if statement.iffalse.name==label:
+	                	status = True
+		else:
+			if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
+				flag_block2,condition=check_goto(statement.iffalse.block_items,label)
+				flag_stmt2=check_goto_block(statement.iffalse.block_items,label)
+				if flag_block2==True and flag_stmt2==False:
+					statement.iffalse.block_items=gotomoveoutrec(statement.iffalse.block_items,label)
+					statement.iffalse=c_ast.Compound(block_items=statement.iffalse.block_items)
+				elif flag_block2==True and flag_stmt2==True:
+					statement.iffalse=c_ast.Compound(block_items=statement.iffalse.block_items)
+			else:
+				if type(statement.iffalse) is c_ast.If: 
+					gotomoveoutrec_if(statement.iffalse,label)
+	#print statement.show()
+	return c_ast.If(cond=statement.cond, iftrue=statement.iftrue, iffalse=statement.iffalse)
+				
+
+
+
+#Updating Each If Else for Goto
+#Parameter pass statement 
+#Label
+		
+	
+def getRidOfGoto(statement,label):
+	generator = c_generator.CGenerator()
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Goto:
+			if statement.iftrue.name==label:
+	                	new_iftrue=None
+		else:
+		        if type(statement.iftrue) is c_ast.Compound:
+		        	new_block=[]
+				for stmt in statement.iftrue.block_items:
+					if type(stmt) is c_ast.Goto:
+						if stmt.name!=label:
+							new_block.append(stmt)
+					else:
+						new_block.append(stmt)
+				new_iftrue=c_ast.Compound(block_items=new_block)
+                                     
+		
+		if type(statement.iffalse) is c_ast.Label:
+	        	if statement.iffalse.name==label:
+	                	new_iffalse=None
+		else:
+			if type(statement.iffalse) is c_ast.Compound:
+				new_block=[]
+				for stmt in statement.iffalse.block_items:
+					if type(stmt) is c_ast.Goto:
+						if stmt.name!=label:
+							new_block.append(stmt)
+					else:
+						new_block.append(stmt)
+				new_iffalse=c_ast.Compound(block_items=new_block)
+			else:
+				if type(statement.iffalse) is c_ast.If:
+					new_iffalse=getRidOfGoto(statement.iffalse,label)
+	if new_iftrue is not None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	else:
+		return None
+
+
+
+
+
+#Finding Goto in a Block to Call gotomovein
+#Parameter pass block of statement 
+#Label
+
+
+def goto_finder(statements,label):
+	flag_block1=check_goto_block_Sp(statements,label)
+	if flag_block1==True:
+		flag_block1=check_label_block_sp(statements,label)
+		if flag_block1==True:
+			return statements
+		else:
+			return gotomovein(statements,label)
+	else:
+		update_statements=[]
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				update_statements.append(goto_finder_if(statement,label))
+			elif type(statement) is c_ast.While:
+				update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=goto_finder(statement.stmt.block_items,label))))
+			else:
+				update_statements.append(statement)
+		return update_statements
+
+
+#Finding Goto in a If Block to Call gotomovein
+#Parameter pass statement 
+#Label
+
+def goto_finder_if(statement,label):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement) is c_ast.If:
+			if type(statement.iftrue) is c_ast.Compound:
+				if statement.iftrue.block_items is not None:
+					new_iftrue=c_ast.Compound(block_items=goto_finder(statement.iftrue.block_items,label))
+				else:
+					new_iftrue=statement.iftrue				
+			else:
+				new_iftrue=statement.iftrue
+			if type(statement.iffalse) is c_ast.Compound:
+				if statement.iffalse.block_items is not None:
+					new_iffalse=c_ast.Compound(block_items=goto_finder(statement.iffalse.block_items,label))
+				else:
+					new_iffalse=statement.iffalse
+			elif type(statement.iffalse) is c_ast.If:
+				new_iffalse=goto_finder_if(statement.iffalse,label)
+			else:
+				new_iffalse=statement.iffalse
+	return c_ast.If(cond=statement.cond,iftrue=new_iftrue,iffalse=new_iffalse)
+
+
+
+
+#Method to Move Goto Inside
+#Parameter pass statement 
+#Label
+
+def gotomovein(statements,label):
+	flag_block1=check_goto_block_Sp(statements,label)
+	new_statements1=[]
+	new_statements2=[]
+	flag=False
+	if flag_block1==True:
+		flag_block1,condition=check_goto(statements,label)
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				flag_stmt3=check_goto_block_If(statement,label)				
+				flag_block2=check_label_If(statement,label)
+				flag_stmt2=check_label_block_If(statement,label)
+				if flag_stmt3==True:
+					if flag_block2==True and flag_stmt2==True:
+						new_statements1.append(statement)
+					else:
+						new_statement=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='go_'+label), rvalue=condition)
+						new_variable['go_'+label]='go_'+label
+						condition=c_ast.BinaryOp(op='>', left=c_ast.ID(name='go_'+label), right=c_ast.Constant(type='int', value='0'))
+						new_statements1.append(new_statement)
+						flag=True
+				else:
+					if flag_block2==True and flag_stmt2==False:
+						flag=False
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+						new_statements1.append(updateIfBlock(statement,label,condition))
+
+						new_statements2=[]
+					else:
+						if flag_block2==True and flag_stmt2==True:
+							flag=False
+							new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+							new_statements1.append(updateIfBlock(statement,label,condition))
+							new_statements2=[]
+						else:
+							if flag==False:
+								new_statements1.append(statement)
+							else:
+								new_statements2.append(statement)
+			elif type(statement) is c_ast.While:
+				flag_block2=check_label(statement.stmt.block_items,label)
+				#flag_stmt2=check_label_block(statement.stmt.block_items,label)
+				flag_stmt2=check_label_block_sp(statement.stmt.block_items,label)			
+				if flag_block2==False and flag_stmt2==False:
+					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
+				elif flag_block2==True and flag_stmt2==True:
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
+					new_blocks=[]
+					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.stmt.block_items:
+						new_blocks.append(stmt)
+					new_blocks.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='go_'+label) , rvalue= c_ast.Constant(type='int', value='0')))
+					statement=c_ast.While(cond=new_cond, stmt=c_ast.Compound(block_items=new_blocks))
+					flag=False
+					new_statements2=[]
+				elif flag_block2==True and flag_stmt2==False:
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
+					new_blocks=[]
+					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.stmt.block_items:
+						new_blocks.append(stmt)
+					new_blocks.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='go_'+label) , rvalue= c_ast.Constant(type='int', value='0')))
+					new_blocks=gotomoveinrec(new_blocks,label,condition)
+					statement=c_ast.While(cond=new_cond, stmt=c_ast.Compound(block_items=new_blocks))
+					flag=False
+					new_statements2=[]
+				else:
+					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
+				if flag==False:
+					new_statements1.append(statement)
+				else:
+					new_statements2.append(statement)
+			else:
+				if flag==False:
+					new_statements1.append(statement)
+				else:
+					new_statements2.append(statement)
+		return new_statements1
+	else:
+		return statements
+
+
+
+#Method to Move Goto Inside Recursive 
+#Parameter pass statement 
+#Label
+
+
+def gotomoveinrec(statements,label,condition):
+	flag_block1,condition=check_goto(statements,label)
+	new_statements1=[]
+	new_statements2=[]
+	flag=False
+	if flag_block1==True:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				flag_stmt3=check_goto_block_If(statement,label)				
+				flag_block2=check_label_If(statement,label)
+				flag_stmt2=check_label_block_If(statement,label)
+				if flag_stmt3==True:
+					if flag_block2==True and flag_stmt2==True:
+						new_statements1.append(statement)
+					else:
+						flag=True
+				else:
+					if flag_block2==True and flag_stmt2==False:
+						flag=False
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+						new_statements1.append(updateIfBlock(statement,label,condition))
+
+						new_statements2=[]
+					else:
+						if flag_block2==True and flag_stmt2==True:
+							flag=False
+							if len(new_statements2)>0:
+								new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+							new_statements1.append(updateIfBlock(statement,label,condition))
+							new_statements2=[]
+						else:
+							if flag==False:
+								new_statements1.append(statement)
+							else:
+								new_statements2.append(statement)
+			elif type(statement) is c_ast.While:
+				flag_block2=check_label(statement.stmt.block_items,label)
+				#flag_stmt2=check_label_block(statement.stmt.block_items,label)
+				flag_stmt2=check_label_block_sp(statement.stmt.block_items,label)
+				if flag_block2==False and flag_stmt2==False:
+					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
+				elif flag_block2==True and flag_stmt2==True:
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
+					new_blocks=[]
+					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.stmt.block_items:
+						new_blocks.append(stmt)
+					new_blocks.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='go_'+label) , rvalue= c_ast.Constant(type='int', value='0')))
+					statement=c_ast.While(cond=new_cond, stmt=c_ast.Compound(block_items=new_blocks))
+					flag=False
+					new_statements2=[]
+				elif flag_block2==True and flag_stmt2==False:
+					if len(new_statements2)>0:
+						new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
+					new_cond=c_ast.BinaryOp(op='||', left=condition, right=statement.cond)
+					new_blocks=[]
+					new_blocks.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.stmt.block_items:
+						new_blocks.append(stmt)
+					new_blocks.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='go_'+label) , rvalue= c_ast.Constant(type='int', value='0')))
+					new_blocks=gotomoveinrec(new_blocks,label,condition)
+					statement=c_ast.While(cond=new_cond, stmt=c_ast.Compound(block_items=new_blocks))
+					flag=False
+					new_statements2=[]
+				else:
+					statement=c_ast.While(cond=statement.cond, stmt=statement.stmt)
+				if flag==False:
+					new_statements1.append(statement)
+				else:
+					new_statements2.append(statement)
+			else:
+				if flag==False:
+					new_statements1.append(statement)
+				else:
+					new_statements2.append(statement)
+		return new_statements1
+	else:
+		return statements
+
+
+
+
+#Updating Each If Else for Goto
+#Parameter pass statement 
+#Label
+
+def updateIfBlock(statement,label,condition):
+	new_iftrue=None
+	new_iffalse=None
+	new_condtion=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Goto:
+			if statement.iftrue.name==label:
+				new_block=[]
+				new_block.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+				new_block.append(statement.iftrue)
+		        	new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iftrue) is c_ast.Compound:
+				flag_stmt=check_label(statement.iftrue.block_items,label)
+				flag_stmt_block=check_label_block_sp(statement.iftrue.block_items,label)
+			        if flag_stmt==True:
+			        	new_block=[]
+			        	new_block.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.iftrue.block_items:
+						new_block.append(stmt)
+					if flag_stmt_block==False:
+						new_block=gotomoveinrec(new_block,label,condition)
+					new_iftrue=c_ast.Compound(block_items=new_block)
+				else:
+					new_condtion=c_ast.BinaryOp(op='&&', left=c_ast.UnaryOp(op='!', expr=condition), right=statement.cond)
+					new_iftrue=statement.iftrue
+                         
+			
+		if type(statement.iffalse) is c_ast.Label:
+			new_block=[]
+			new_block.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+			new_block.append(statement.iffalse)
+		        new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iffalse) is c_ast.Compound:
+				flag_stmt=check_label(statement.iffalse.block_items,label)
+				flag_stmt_block=check_label_block_sp(statement.iffalse.block_items,label)
+				if flag_stmt==True:
+			        	new_block=[]
+			        	new_block.append(c_ast.If(cond=condition, iftrue=c_ast.Goto(name=label), iffalse=None))
+					for stmt in statement.iffalse.block_items:
+						new_block.append(stmt)
+					if flag_stmt_block==False:
+						new_block=gotomoveinrec(new_block,label,condition)
+					new_iffalse=c_ast.Compound(block_items=new_block)
+				else:
+					new_condtion=c_ast.BinaryOp(op='&&', left=c_ast.UnaryOp(op='!', expr=condition), right=statement.cond)
+					new_iffalse=statement.iffalse
+			else:
+				if type(statement.iffalse) is c_ast.If:
+					new_iffalse=updateIfBlock(statement.iffalse,label,condition)
+	if new_condtion is not None:
+		return c_ast.If(cond=new_condtion, iftrue=new_iftrue, iffalse=new_iffalse)
+	else:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	
+	
+	
+
+def reOrganizeBreaks(statements,new_break_map):
+	update_statement=[]
+	if statements is not None:
+		for statement in statements:
+			if type(statement) is c_ast.If:
+				statement=reOrganizeBreaksIf(statement,new_break_map)
+				update_statement.append(statement)
+			elif type(statement) is c_ast.Break:
+				update_statement.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+				new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+				update_statement.append(statement)
+			else:
+				update_statement.append(statement)
+		return update_statement
+	else:
+		return None
+
+
+def reOrganizeBreaksIf(statement,new_break_map):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Break:
+			new_block=[]
+			new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+			new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+			new_block.append(statement.iftrue)
+			new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iftrue) is c_ast.Compound:
+				new_block=reOrganizeBreaks(statement.iftrue.block_items,new_break_map)
+				new_iftrue=c_ast.Compound(block_items=new_block)
+		
+		if type(statement.iffalse) is c_ast.Break:
+			new_block=[]
+			new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='do_break'+str(len(new_break_map.keys())+1)), rvalue=c_ast.Constant(type='int', value='1')))
+			new_break_map['do_break'+str(len(new_break_map.keys())+1)]='do_break'+str(len(new_break_map.keys())+1)
+			new_block.append(statement.iffalse)
+			new_iffalse=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iffalse) is c_ast.Compound:
+				new_block=reOrganizeBreaks(statement.iffalse.block_items,new_break_map)
+				new_iffalse=c_ast.Compound(block_items=new_block)
+			else:
+				if type(statement.iffalse) is c_ast.If:
+					new_iffalse=reOrganizeBreaksIf(statement.iffalse,new_break_map)
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+		
+		
+		
+def addingBreakVariables(statements,new_break_map):
+	for variable in new_break_map.keys():
+		global new_variable
+		new_variable[variable]=variable
+		new_block=[]
+		new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=variable), rvalue=c_ast.Constant(type='int', value='0')))
+		new_block.append(c_ast.Break())
+		new_iftrue=c_ast.Compound(block_items=new_block)
+		statements.append(c_ast.If(cond=c_ast.BinaryOp(op='==', left=c_ast.ID(name=variable), right=c_ast.Constant(type='int', value='1')), iftrue=new_iftrue, iffalse=None))
+	return statements
+	
+	
+
+def removeEmptyIfLoop(statements):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			statement=removeEmptyIfLoop_If(statement)
+			if statement is not None:
+				update_statements.append(statement)
+		elif type(statement) is c_ast.While:
+			new_block_items=removeEmptyIfLoop(statement.stmt.block_items)
+			update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=new_block_items)))
+		else:
+			update_statements.append(statement)
+	return update_statements
+			
+			
+			
+def removeEmptyIfLoop_If(statement):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			if len(statement.iftrue.block_items)==0:
+				new_iftrue=None
+			else:
+				new_block=removeEmptyIfLoop(statement.iftrue.block_items)
+				if len(new_block)==0:
+					new_iftrue=None
+				else:
+					new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			new_iftrue=statement.iftrue
+				
+		if type(statement.iffalse) is c_ast.Compound:
+			if len(statement.iffalse.block_items)==0:
+				new_iffalse=None
+			else:
+				new_block=removeEmptyIfLoop(statement.iffalse.block_items)
+				if len(new_block)==0:
+					new_iffalse=None 
+				else:
+					new_iffalse=c_ast.Compound(block_items=new_block) 
+		elif type(statement.iffalse) is c_ast.If:
+			result=removeEmptyIfLoop_If(statement.iffalse)
+			if result is not None:
+				new_iffalse=result
+		else:
+			new_iffalse=statement.iffalse
+	
+	
+	if new_iftrue is not None and new_iffalse is None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
+	elif new_iftrue is not None and new_iffalse is not None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.Compound:
+		return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=new_iffalse, iffalse=None)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.If:
+		return new_iffalse
+	else:
+		return None
+
+		
+		
+def returnReplacement(statements,end_label_map):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			statement=returnReplacementIf(statement,end_label_map)
+			if statement is not None:
+				update_statements.append(statement)
+		elif type(statement) is c_ast.While:
+			new_block_items=returnReplacement(statement.stmt.block_items,end_label_map)
+			update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=new_block_items)))
+		elif type(statement) is c_ast.Return:
+			if statement.expr is not None:
+				label='Label'+str(len(end_label_map.keys())+1)
+				update_statements.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='RET'), rvalue=statement.expr))
+				update_statements.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+			else:
+				label='Label'+str(len(end_label_map.keys())+1)
+				update_statements.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+		else:
+			update_statements.append(statement)
+	return update_statements
+	
+	
+	
+	
+	
+	
+def returnReplacementIf(statement,end_label_map):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Return:
+			new_block=[]
+			if statement.iftrue.expr is not None:
+				label='Label'+str(len(end_label_map.keys())+1)
+				new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='RET'), rvalue=statement.iftrue.expr))
+				new_block.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+			else:
+				label='Label'+str(len(end_label_map.keys())+1)
+				new_block.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+			new_iftrue=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iftrue) is c_ast.Compound:
+				new_block=returnReplacement(statement.iftrue.block_items,end_label_map)
+				new_iftrue=c_ast.Compound(block_items=new_block)
+			
+		if type(statement.iffalse) is c_ast.Return:
+			new_block=[]
+			if statement.iffalse.expr is not None:
+				label='Label'+str(len(end_label_map.keys())+1)
+				new_block.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='RET'), rvalue=statement.iffalse.expr))
+				new_block.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+			else:
+				label='Label'+str(len(end_label_map.keys())+1)
+				new_block.append(c_ast.Goto(name=label))
+				end_label_map[label]=label
+			new_iffalse=c_ast.Compound(block_items=new_block)
+		else:
+			if type(statement.iffalse) is c_ast.Compound:
+				new_block=returnReplacement(statement.iffalse.block_items,end_label_map)
+				new_iffalse=c_ast.Compound(block_items=new_block)
+			else:
+				if type(statement.iffalse) is c_ast.If:
+					new_iffalse=returnReplacementIf(statement.iffalse,end_label_map)
+	return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+
+
+
+
+
+
+
+
+
+"""
+ 
+Goto removal Modules End 
+
+"""
+
+
+break_count=0
+
+continue_count=0	
+	
+
+
+def getBreakStmt(statements,break_map):
+	update_statement1=[]
+	update_statement2=[]
+	flag=False
+	global break_count
+	global continue_count
+        global new_variable
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			if flag==False:
+				break_map_temp={}
+				statement=getBreakStmtIf(statement,break_map_temp)
+				for e_break in break_map_temp.keys():
+					break_map[e_break]=break_map_temp[e_break]
+				update_statement1.append(statement)
+				if len(break_map_temp.keys())>0:
+					flag=True
+			else:
+				update_statement2.append(statement)
+		elif type(statement) is c_ast.While:
+			break_map_temp={}
+			new_block_items1=getBreakStmt(statement.stmt.block_items,break_map_temp)
+			new_block_items2=[]
+			new_condtion=statement.cond
+			if len(break_map_temp.keys())>0:
+				for var_name in break_map_temp.keys():
+                                        new_block_items2.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='0')))
+					if break_map_temp[var_name]=='Break':
+						temp_new_condition=c_ast.BinaryOp(op='&&', left=new_condtion, right=c_ast.BinaryOp(op='==', left=c_ast.ID(name=var_name), right=c_ast.Constant(type='int', value='0')))
+						new_condtion=temp_new_condition
+			
+                        for item in new_block_items1:
+                            new_block_items2.append(item)
+			if flag==False:
+				update_statement1.append(c_ast.While(cond=new_condtion, stmt=c_ast.Compound(block_items=new_block_items2)))
+			else:
+				update_statement2.append(c_ast.While(cond=new_condtion, stmt=c_ast.Compound(block_items=new_block_items2)))
+		elif type(statement) is c_ast.Break:
+                        break_count=break_count+1
+                        var_name='break_'+str(break_count)+'_flag'
+                        new_variable[var_name]=var_name
+                        update_statement1.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Break'
+		elif type(statement) is c_ast.Continue:
+		        continue_count=continue_count+1
+		       	var_name='continue_'+str(continue_count)+'_flag'
+		        new_variable[var_name]=var_name
+		        update_statement1.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Continue'
+		else:
+			if flag==False:
+				update_statement1.append(statement)
+			else:
+				update_statement2.append(statement)
+	if flag==True:
+		update_condition=None
+		for var_name in break_map.keys():
+			if update_condition is None:
+				update_condition=c_ast.BinaryOp(op='==', left=c_ast.ID(name=var_name), right=c_ast.Constant(type='int', value='0'))
+			else:
+				update_condition=c_ast.BinaryOp(op='&&', left=update_condition, right=c_ast.BinaryOp(op='==', left=c_ast.ID(name=var_name), right=c_ast.Constant(type='int', value='0')))
+		if len(update_statement2)>0:
+			update_statement1.append(c_ast.If(cond=update_condition, iftrue=c_ast.Compound(block_items=update_statement2), iffalse=None))
+		
+		return getBreakStmt(update_statement1,break_map)
+	else:
+		return update_statement1
+			
 		
 
 
+
+
+def getBreakStmtIf(statement,break_map):
+	new_iftrue=None
+	new_iffalse=None
+	global break_count
+	global new_variable
+	global continue_count
+	if type(statement) is c_ast.If:
 			
+		if type(statement.iftrue) is c_ast.Break:
+                        new_block_items=[]
+                        break_count=break_count+1
+                        var_name='continue_'+str(break_count)+'_flag'
+                        new_variable[var_name]=var_name
+                        new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Break'
+			new_iftrue=c_ast.Compound(block_items=new_block_items)
+		elif type(statement.iftrue) is c_ast.Continue:
+		        new_block_items=[]
+		        break_count=break_count+1
+		        var_name='break_'+str(continue_count)+'_flag'
+		        new_variable[var_name]=var_name
+		        new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Continue'
+			new_iftrue=c_ast.Compound(block_items=new_block_items)
+		elif type(statement.iftrue) is c_ast.Compound:
+			new_block_items=getBreakStmt(statement.iftrue.block_items,break_map)
+			new_iftrue=c_ast.Compound(block_items=new_block_items)
+			
+		if type(statement.iffalse) is c_ast.Break:
+                        new_block_items=[]
+                        break_count=break_count+1
+                        var_name='break_'+str(break_count)+'_flag'
+                        new_variable[var_name]=var_name
+                        new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Break'
+			new_iffalse=c_ast.Compound(block_items=new_block_items)
+		elif type(statement.iffalse) is c_ast.Continue:
+		        new_block_items=[]
+		        continue_count=continue_count+1
+		        var_name='continue_'+str(continue_count)+'_flag'
+		        new_variable[var_name]=var_name
+		        new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
+			break_map[var_name]='Continue'
+			new_iffalse=c_ast.Compound(block_items=new_block_items)	
+		elif type(statement.iffalse) is c_ast.Compound:
+			new_block_items=getBreakStmt(statement.iffalse.block_items,break_map)
+			new_iffalse=c_ast.Compound(block_items=new_block_items)
+		else:
+			if type(statement.iffalse) is c_ast.If:
+				new_iffalse=getBreakStmtIf(statement,break_map)
+	if new_iftrue is not None and new_iffalse is None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
+	elif new_iftrue is not None and new_iffalse is not None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.Compound:
+		return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=new_iffalse, iffalse=None)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.If:
+		return new_iffalse
+	else:
+		return None
+		
+		
+
+
+"""
+
+#Program Class
+#Plain Python object to store Information about Member Method of a Java Class 
+"""
+class programclass(object):
+ 	def __init__(self, filename, functionMap , variableMap, axiomeMap):
+        	self.filename = filename
+        	self.functionMap = functionMap
+        	self.variableMap = variableMap
+        	self.axiomeMap = axiomeMap
+
+        def getFilename(self):
+        	return self.filename
+        def getFunctionMap(self):
+        	return self.functionMap
+        def getVariableMap(self):
+        	return self.variableMap
+        def getAxiomeMap(self):
+        	return self.axiomeMap
+	def setFilename(self, filename):
+	        self.filename=filename
+	def setFunctionMap(self, functionMap):
+		self.functionMap=functionMap
+	def setVariableMap(self, variableMap):
+		self.variableMap=variableMap
+	def setAxiomeMap(self, axiomeMap):
+		self.axiomeMap=axiomeMap
+
+
+"""
+
+
+#Function Substitution Modules
+
+
+"""
+
+def substituteFunBlock(statements,functionvarmap):
+	update_statements=[]
+	global new_variable
+	for statement in statements:
+		if type(statement) is c_ast.FuncCall:
+			membermethod=functionvarmap[statement.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+
+			for x in range(0, len(statement.args.exprs)):
+				arg=statement.args.exprs
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+		
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+			        	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+			        else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+		elif type(statement) is c_ast.Assignment:
+			new_statement,new_block=substituteFun(statement.rvalue,functionvarmap)
+			if new_block is not None and len(new_block)>0:
+				for stmt in new_block:
+					update_statements.append(stmt)
+			update_statements.append(c_ast.Assignment(op='=',lvalue=statement.lvalue,rvalue=new_statement))
+		elif type(statement) is c_ast.While:
+			statement.cond,new_block=substituteFun(statement.cond,functionvarmap)
+			if new_block is not None and len(new_block)>0:
+				for stmt in new_block:
+					update_statements.append(stmt)
+			temp_new_block=substituteFunBlock(statement.stmt.block_items,functionvarmap)
+			for stmt in new_block:
+				temp_new_block.append(stmt)
+			update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=temp_new_block)))	
+		elif type(statement) is c_ast.If:
+			statement,new_block=substituteFunBlockIf(statement,functionvarmap)
+			if new_block is not None and len(new_block)>0:
+				for stmt in new_block:
+					update_statements.append(stmt)
+			update_statements.append(statement)
+		else:
+			update_statements.append(statement)
+	return update_statements
+
+
+
+def substituteFunBlockIf(statement,functionvarmap):
+	new_iftrue=None
+	new_iffalse=None
+	update_statements=None
+	if type(statement) is c_ast.If:
+		statement.cond,new_block=substituteFun(statement.cond,functionvarmap)
+		if new_block is not None and len(new_block)>0:
+			update_statements=[]
+			for stmt in new_block:
+				update_statements.append(stmt)
+		if type(statement.iftrue) is c_ast.Compound:
+			new_iftrue=c_ast.Compound(block_items=substituteFunBlock(statement.iftrue.block_items,functionvarmap))
+		else:
+			new_iftrue=statement.iftrue
+		if type(statement.iffalse) is c_ast.Compound:
+			new_iffalse=c_ast.Compound(block_items=substituteFunBlock(statement.iffalse.block_items,functionvarmap))
+		else:
+			if type(statement.iffalse) is c_ast.If:
+				statement.iffalse,new_block =substituteFunBlockIf(statement.iffalse,functionvarmap)
+				if new_block is not None and len(new_block)>0:
+					if update_statements is None:
+						update_statements=[]
+					for stmt in new_block:
+						update_statements.append(stmt)
+				new_iffalse=statement.iffalse
+	return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse),update_statements
+
+
+
+def substituteFun(statement,functionvarmap):
+	new_block=None
+	
+	global new_variable
+	
+	if type(statement) is c_ast.ID:
+                return c_ast.ID(name=statement.name),new_block
+        elif type(statement) is c_ast.Constant:
+                return c_ast.Constant(type='int',value=statement.value),new_block
+        elif type(statement) is c_ast.FuncCall:
+                update_statements=[]
+ 		membermethod=functionvarmap[statement.name.name]
+		in_var_map=membermethod.getInputvar().keys()
+		count=membermethod.getUsedCounter()
+		count=count+1
+		membermethod.setUsedCounter(count)
+		for x in range(0, len(statement.args.exprs)):
+                        arg=statement.args.exprs
+			update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+		new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar())
+		
+		for x in membermethod.getInputvar():
+			if membermethod.getInputvar()[x].getDimensions()>0:
+				new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+			else:
+                                new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+		for x in membermethod.getLocalvar():
+			if membermethod.getLocalvar()[x].getDimensions()>0:
+				new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+			else:
+                                new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+		
+		
+		for stmt in new_blocks:
+			update_statements.append(stmt)
+ 		
+ 		return c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+'result'),update_statements	
+ 	elif type(statement) is c_ast.BinaryOp:
+ 		if type(statement.left) is c_ast.ID and type(statement.right) is c_ast.ID:
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.ID and type(statement.right) is c_ast.BinaryOp:
+                                               
+                        stmt_right,new_block=substituteFun(statement.right,functionvarmap)
+
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=stmt_right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.ID:
+ 			
+                        stmt_left,new_block=substituteFun(statement.left,functionvarmap)
+                        
+ 			return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.Constant:
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.ID:
+
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.ID and type(statement.right) is c_ast.Constant:
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.BinaryOp:
+
+                        stmt_right,new_block=substituteFun(statement.right,functionvarmap)
+                        
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=stmt_right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.Constant:
+
+                        stmt_left,new_block=substituteFun(statement.left,functionvarmap)
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=statement.right),new_block
+ 			
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.BinaryOp:
+
+                        stmt_left,new_block1=substituteFun(statement.left,functionvarmap)
+
+                        stmt_right,new_block2=substituteFun(statement.right,functionvarmap)
+
+                        if new_block1 is not None and new_block2 is None:
+ 		
+                                return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=stmt_right),new_block1
+
+                        elif new_block1 is None and new_block2 is not None:
+
+                                return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=stmt_right),new_block2
+                        else:
+                                new_block=[]
+                                for stmt in new_blocks1:
+                                        new_block.append(stmt)
+                                for stmt in new_blocks2:
+                                        new_block.append(stmt)
+                                return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=stmt_right),new_block
+ 		
+  		elif type(statement.left) is c_ast.FuncCall and type(statement.right) is c_ast.BinaryOp:
+ 		 	update_statements=[]
+		 	membermethod=functionvarmap[statement.left.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.left.args.exprs)):
+				arg=statement.left.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+				
+				
+				
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			
+			
+			
+			stmt_right,new_block1=substituteFun(statement.right,functionvarmap)
+			if new_block1 is not None:
+				for stmt in new_block1:
+					update_statements.append(stmt)
+				
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET'), right=stmt_right),update_statements			
+ 		
+ 		
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.FuncCall:
+ 		 	update_statements=[]
+		 	stmt_left,new_block1=substituteFun(statement.left,functionvarmap)
+		 	if new_block1 is not None:
+		 		for stmt in new_block1:
+					update_statements.append(stmt)
+		 	membermethod=functionvarmap[statement.right.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.right.args.exprs)):
+				arg=statement.right.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+ 			return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET')),update_statements	
+ 			
+ 		elif type(statement.left) is c_ast.ID and type(statement.right) is c_ast.FuncCall:
+ 			update_statements=[]
+ 			membermethod=functionvarmap[statement.right.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.right.args.exprs)):
+				arg=statement.right.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+								
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET')),update_statements	
+ 		
+ 		elif type(statement.left) is c_ast.FuncCall and type(statement.right) is c_ast.ID :
+			update_statements=[]
+		 	membermethod=functionvarmap[statement.left.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.left.args.exprs)):
+				arg=statement.left.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+		 		
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET'), right=statement.right),update_statements	
+ 		
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.FuncCall:
+		 	update_statements=[]
+		 	membermethod=functionvarmap[statement.right.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.right.args.exprs)):
+				arg=statement.right.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+		 		
+		 	return c_ast.BinaryOp(op=statement.op,left=statement.left, right=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET')),update_statements	
+		 		
+		elif type(statement.left) is c_ast.FuncCall and type(statement.right) is c_ast.Constant :
+			update_statements=[]
+			membermethod=functionvarmap[statement.left.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.left.args.exprs)):
+				arg=statement.left.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+				 		
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name='t_'+str(count)+'_RET'), right=statement.right),update_statements	
+ 		
+ 		elif type(statement.left) is c_ast.FuncCall and type(statement.right) is c_ast.FuncCall:
+		 	update_statements=[]
+		 	membermethod=functionvarmap[statement.left.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.left.args.exprs)):
+				arg=statement.left.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			
+			
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+					
+			
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+		 	
+		 	stmt_left=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET')
+		 	
+		 	membermethod=functionvarmap[statement.right.name.name]
+			in_var_map=membermethod.getInputvar().keys()
+			count=membermethod.getUsedCounter()
+			count=count+1
+			membermethod.setUsedCounter(count)
+			for x in range(0, len(statement.right.args.exprs)):
+				arg=statement.right.args.exprs
+				#update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+arg[x].name),rvalue=c_ast.ID(name=in_var_map[x])))
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+in_var_map[x]),rvalue=c_ast.ID(name=arg[x].name)))
+			
+			
+			
+			new_blocks=reconstructStmtBlock(membermethod.getBody().block_items,count,membermethod.getLocalvar(),membermethod.getInputvar(),membermethod.getSerialNo())
+			
+			
+			for x in membermethod.getInputvar():
+				if membermethod.getInputvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getInputvar()[x].getVariableType()
+				
+			for x in membermethod.getLocalvar():
+				if membermethod.getLocalvar()[x].getDimensions()>0:
+					new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]='array'
+				else:
+                                	new_variable['f'+str(membermethod.getSerialNo())+'_'+str(count)+'_'+x]=membermethod.getLocalvar()[x].getVariableType()
+						
+		
+		
+			for stmt in new_blocks:
+				update_statements.append(stmt)
+		 	
+		 	stmt_right=c_ast.ID(name='f'+str(membermethod.getSerialNo())+'_'+str(count)+'_RET')
+		 	
+		 	return c_ast.BinaryOp(op=statement.op,left=stmt_left, right=stmt_right),update_statements	
+	
+ 		else:
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right),new_block
+ 	return None
+
+
+
+
+    		
+
+def reconstructStmtBlock(statements,count,var_map,in_var_map,fun_count):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.Assignment:
+			if type(statement.lvalue) is c_ast.ID:
+				if statement.lvalue.name in var_map.keys() or statement.lvalue.name in in_var_map.keys():
+					update_statements.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='f'+str(fun_count)+'_'+str(count)+'_'+statement.lvalue.name), rvalue=reconstructStmt(statement.rvalue,count,var_map,in_var_map,fun_count)))
+				else:
+					update_statements.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=statement.lvalue.name), rvalue=reconstructStmt(statement.rvalue,count,var_map,in_var_map,fun_count)))
+			else:
+				update_statements.append(c_ast.Assignment(op='=', lvalue=statement.lvalue, rvalue=reconstructStmt(statement.rvalue,count,var_map,in_var_map)))
+		elif type(statement) is c_ast.While:
+			update_statements.append(reconstructStmt(c_ast.While(cond=reconstructStmt(statement.cond,count,var_map,in_var_map,fun_count),stmt=c_ast.Compound(block_items=reconstructStmtBlock(statement.cond.block_items,count,var_map,in_var_map,fun_count)))))
+		elif type(statement) is c_ast.If:
+			update_statements.append(reconstructStmtIf(statement,count,var_map,in_var_map,fun_count))
+		else:
+			if type(statement) is c_ast.FuncCall:
+				update_statements.append(statement)
+			else:
+                                if type(statement) is c_ast.Decl:
+                                        var_type=None
+                                        initial_value=None
+                                        for child in statement.children():
+                                                if type(child[1].type) is c_ast.IdentifierType:
+                                                        var_type=child[1].type.names[0]
+                                                else:
+                                                        initial_value=child[1]
+                                        if initial_value is not None:
+                                        	if statement.name in var_map.keys() or statement.name in in_var_map.keys():
+                                        		update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='f'+str(fun_count)+'_'+str(count)+'_'+statement.name), rvalue=initial_value))
+                                        	else:
+                                                	update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name=statement.name), rvalue=initial_value))
+                                else:
+                                        update_statements.append(statement)
+	return update_statements
+
+
+
+
+
+def reconstructStmtIf(statement,count,var_map,in_var_map,fun_count):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			new_iftrue=c_ast.Compound(block_items=reconstructStmtBlock(statement.iftrue.block_items,count,var_map,in_var_map,fun_count))
+		else:
+			new_iftrue=statement.iftrue
+		if type(statement.iffalse) is c_ast.Compound:
+			new_iffalse=c_ast.Compound(block_items=reconstructStmtBlock(statement.iffalse.block_items,count,var_map,in_var_map,fun_count))
+		else:
+			if type(statement.iffalse) is c_ast.If:
+				new_iffalse=reconstructStmtIf(statement.iffalse,count,var_map,in_var_map)
+	return c_ast.If(cond==reconstructStmt(statement.cond,count,var_map,in_var_map,fun_count), iftrue=new_iftrue, iffalse=new_iffalse)
+
+
+
+
+
+
+def reconstructStmt(statement,count,var_map,in_var_map,fun_count):
+	if type(statement) is c_ast.ID:
+		if statement.name in var_map.keys() or statement.name in in_var_map.keys():
+			new_ID='f'+str(fun_count)+'_'+str(count)+'_'+statement.name
+			return c_ast.ID(name=new_ID)
+		else:
+			return c_ast.ID(name=statement.name)
+ 	elif type(statement) is c_ast.BinaryOp:
+ 		if type(statement.left) is c_ast.ID and type(statement.right) is c_ast.ID:
+ 			stmt_left=None
+ 			stmt_right=None
+ 			
+ 			if statement.left.name in var_map.keys() or statement.left.name in in_var_map.keys():
+ 				stmt_left='f'+str(fun_count)+'_'+str(count)+'_'+statement.left.name
+ 			else:
+ 				stmt_left=statement.left.name
+ 				
+ 			if statement.right.name in var_map.keys() or statement.right.name in in_var_map.keys():
+				stmt_right='f'+str(fun_count)+'_'+str(count)+'_'+statement.right.name
+			else:
+ 				stmt_right=statement.right.name
+ 				
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name=stmt_left), right=c_ast.ID(name=stmt_right))
+ 		elif type(statement.left) is c_ast.ID and type(statement.right) is c_ast.BinaryOp:
+ 			stmt_left=None
+ 			
+ 			if statement.left.name in var_map.keys() or statement.left.name in in_var_map.keys():
+				stmt_left='f'+str(fun_count)+'_'+str(count)+'_'+statement.left.name
+			else:
+ 				stmt_left=statement.left.name
+ 				
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name=stmt_left), right=reconstructStmt(statement.right,count,var_map,in_var_map,fun_count))
+ 			
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.ID:
+ 			stmt_right=None
+ 			
+ 			if statement.right.name in var_map.keys() or statement.right.name in in_var_map.keys():
+				stmt_right='f'+str(fun_count)+'_'+str(count)+statement.right.name
+			else:
+ 				stmt_right=statement.right.name
+ 			
+ 			return c_ast.BinaryOp(op=statement.op,left=reconstructStmt(statement.left,count,var_map,in_var_map,fun_count), right=c_ast.ID(name=stmt_right))
+ 			
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.Constant:
+ 		
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right)
+ 			
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.ID:
+ 			stmt_right=None
+  			
+			if statement.right.name in var_map.keys() or statement.right.name in in_var_map.keys():
+				stmt_right='f'+str(fun_count)+'_'+str(count)+'_'+statement.right.name
+			else:
+ 				stmt_right=statement.right.name
+ 				
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=c_ast.ID(name=stmt_right))
+ 			
+ 		elif type(statement.left) is c_ast.ID and type(statement.right) is c_ast.Constant:
+ 			stmt_left=None
+ 			
+ 		 	if statement.left.name in var_map.keys() or statement.left.name in in_var_map.keys():
+				stmt_left='f'+str(fun_count)+'_'+str(count)+'_'+statement.left.name
+			else:
+ 				stmt_left=statement.left.name
+ 				
+ 			return c_ast.BinaryOp(op=statement.op,left=c_ast.ID(name=stmt_left), right=statement.right)
+ 		elif type(statement.left) is c_ast.Constant and type(statement.right) is c_ast.BinaryOp:
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=reconstructStmt(statement.right,count,var_map,in_var_map,fun_count))
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.Constant:
+ 			return c_ast.BinaryOp(op=statement.op,left=reconstructStmt(statement.left,count,var_map,in_var_map,fun_count), right=statement.right)
+ 		elif type(statement.left) is c_ast.BinaryOp and type(statement.right) is c_ast.BinaryOp:
+ 			return c_ast.BinaryOp(op=statement.op,left=reconstructStmt(statement.left,count,var_map,in_var_map,fun_count), right=reconstructStmt(statement.right,count,var_map,in_var_map,fun_count))
+ 		else:
+ 			return c_ast.BinaryOp(op=statement.op,left=statement.left, right=statement.right)
+ 	else:
+ 		return statement
+ 	return None
+	
