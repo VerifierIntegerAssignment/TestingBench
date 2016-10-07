@@ -905,7 +905,17 @@ def translate1(p,v,flag):
             o_map[fn]=o
             a_map[fn]=a
             cm_map[fn]=cm
+            f,o,a,assert_list,assume_list=getAssertAssume(f,o,a,cm)
             output_axioms_fn(f,o,a)
+            print('\n4. Assumption :')
+            for x in assume_list:
+        	print wff2string1(x)
+            print('\n5. Assertion :')
+            for x in assert_list:
+                if x[0]=='i1':
+                    print 'ForAll '+x[2]+' ---> '+ expr2string1(x[4])
+                else:
+                    print wff2string1(x)
         return f_map,o_map,a_map,cm_map
         
     elif p[1]=='fun':
@@ -913,13 +923,33 @@ def translate1(p,v,flag):
         print('Output for ')
         print(fn)
         f,o,a,cm = rec_solver(f,o,a)
+        f,o,a,assert_list,assume_list=getAssertAssume(f,o,a)
         output_axioms_fn(f,o,a)
+    	print('\n4. Assumption :')
+	for x in assume_list:
+        	print wff2string1(x)
+    	print('\n5. Assertion :')
+	for x in assert_list:
+                if x[0]=='i1':
+                    print 'ForAll '+x[2]+' ----> '+ expr2string1(x[4])
+                else:
+                    print wff2string1(x)
         return f,o,a,cm
     else:
         f,o,a,l = translate0(p,v,flag)
         #Add by Pritom Rajkhowa 10 June 2016
     	f,o,a,cm = rec_solver(f,o,a)
+    	f,o,a,assert_list,assume_list=getAssertAssume(f,o,a)
     	output_axioms_fn(f,o,a)
+    	print('\n4. Assumption :')
+	for x in assume_list:
+        	print wff2string1(x)
+    	print('\n5. Assertion :')
+	for x in assert_list:
+                if x[0]=='i1':
+                    print 'ForAll '+x[2]+' '+ expr2string1(x[4])
+                else:
+                    print wff2string1(x)
     	return f,o,a,cm
 
 
@@ -986,9 +1016,11 @@ def translateFun(p,v,flag): #p=['-1','fun',['foo','x',..,'y'], b]
         if (not x in dep_set) and (not expres(x) in param):
             dep = []
             for x1 in reach_set([x],g):
-                if (expres(x1) in param) and not (x1 in dep):
-                    dep.append(x1)
+                if (expres(x1) in param) and not (expres(x1) in dep):
+                    dep.append(expres(x1))
             dep_set[x] = dep
+    
+    
     for x in f:
         f[x]=parameterize_wff_fun(f[x],dep_set)
     for x in o:
@@ -1974,6 +2006,7 @@ def getVariFunDetails(f,o,a,variableMapIp,variableMapOp):
 		elif values.getVariableType()=='double':
 			vfact="['"+variable+"',0,['double']]"	    	
             if vfacts=="":
+            	vfact='[]'
                 vfacts=vfact
             else:
                 if vfact!="":
@@ -2004,13 +2037,16 @@ def getVariFunDetails(f,o,a,variableMapIp,variableMapOp):
 			vfact=""
 			if len(loopvariables)==0:	
 				if equation not in variableMapOp.keys():
-					values=variableMapIp[equation]
-					if values[1]=='int':	
+					if equation in variableMapIp.keys():
+						values=variableMapIp[equation]
+						if values[1]=='int':	
+							vfact="['"+equation+"',0,['int']]"
+						elif values[1]=='float':
+							vfact="['"+equation+"',0,['float']]"
+						elif values[1]=='double':
+							vfact="['"+equation+"',0,['double']]"
+					else:
 						vfact="['"+equation+"',0,['int']]"
-					elif values[1]=='float':
-						vfact="['"+equation+"',0,['float']]"
-					elif values[1]=='double':
-						vfact="['"+equation+"',0,['double']]"
 				
 			else:
 				function_name=getFunctionName(str(equation),loopvariables )
@@ -2391,6 +2427,10 @@ def solve_rec(e1,e2):
 		lefthandstmt=lefthandstmt.strip()
 		righthandstmt=righthandstmt.strip()
 		variable=e1[2]
+		if lefthandstmt.find('_PROVE')>0:
+			return None
+		elif lefthandstmt.find('_ASSUME')>0:
+        		return None
 		if 'ite' not in righthandstmt: 
 		    	lefthandstmt=simplify(lefthandstmt)
 		    	righthandstmt=simplify(righthandstmt)
@@ -2408,6 +2448,7 @@ def solve_rec(e1,e2):
 		righthandstmt_base=righthandstmt_base.strip()
 		lefthandstmt_base=simplify(lefthandstmt_base)
 		righthandstmt_base=simplify(righthandstmt_base)
+
 	if variable is not None and lefthandstmt is not None and righthandstmt is not None and lefthandstmt_base is not None and righthandstmt_base is not None:
 		righthandstmt_d=righthandstmt
 		righthandstmt_base_d=righthandstmt_base
@@ -2917,16 +2958,17 @@ def primeStatement(expressions):
 		primeStatement(expressions.getExpressionelse())
 		previous=expressions
         else:
-         	for expression in expressions:
-	 		if previous is not None:
-	 			previous.setIsPrime(False)
-	 		if type(expression) is blockclass:
-	 			primeStatement(expression.getExpression())
-	 		if type(expression) is Ifclass:
-	 			primeStatement(expression.getExpressionif())
-	 			if expression.getExpressionelse() is not None:
-	 				primeStatement(expression.getExpressionelse())
-			previous=expression
+         	if expressions is not None:
+         		for expression in expressions:
+	 			if previous is not None:
+	 				previous.setIsPrime(False)
+	 			if type(expression) is blockclass:
+	 				primeStatement(expression.getExpression())
+	 			if type(expression) is Ifclass:
+	 				primeStatement(expression.getExpressionif())
+	 				if expression.getExpressionelse() is not None:
+	 					primeStatement(expression.getExpressionelse())
+				previous=expression
 
 """
 
@@ -3886,10 +3928,13 @@ def construct_expression(tree,postion,variable):
 	return eval(expression)
 	
 def construct_expression_normal(tree):
-	expression=""
-	if type(tree) is m.Relational:
-		expression="['s0',"+expressionCreator(tree)+"]"
-	return eval(expression)
+	if tree is not None:
+		expression=""
+		if type(tree) is m.Relational:
+			expression="['s0',"+expressionCreator(tree)+"]"
+		return eval(expression)
+	else:
+		return None
 
 
 
@@ -4884,16 +4929,28 @@ def programTransformation(function_body):
     new_variable={}
         
     #Syntax translation of the function body
+    
         
     statements=syntaxTranslate(function_body.block_items)
+    
+   
+    #Convert Initiation to assignments   
+    
+    statements=construct_program(statements)
 
     #print(generator.visit(c_ast.Compound(block_items=statements)))
     
+    #Reconstruct Program by Removing assert,assume,error
+    
+    statements=reconstructPreDefinedFun(statements)
         
     #Replace return by goto statement
         
     statements=remove_return(statements)
     
+    #print '#######'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######'
     
         
     #Replace goto structured statement
@@ -4961,6 +5018,8 @@ def programTransformation(function_body):
 
 #file_name='functionTest4.c'
 
+#file_name='mcmillan2006_true_unreach_call.c'
+
 def translate_Ext(file_name):
 	if not(os.path.exists(file_name)): 
         	print "File not exits"
@@ -4969,8 +5028,17 @@ def translate_Ext(file_name):
 	start_time=current_milli_time()
 	content=None
 	global new_variable
+	global fail_count
+	global error_count
+	global assume_count
+        global assert_count
+        fail_count=0
+        error_count=0
+        assume_count=0
+        assert_count=0
 	with open(file_name) as f:
 		content = f.read()
+	content=comment_remover_file(content)
 	content=content.replace('\r','')
 	text = r""" """+content
 	parser = c_parser.CParser()
@@ -5074,7 +5142,9 @@ def translate_Ext(file_name):
     		    membermethod.setBody(body_comp)
     		    localvarmap=getVariables(body_comp)
     		    membermethod.setLocalvar(localvarmap)
-
+    		else:
+		    membermethod.setBody(None)
+    		    membermethod.setLocalvar(None)
                     
     	#program in intermediate form
     	programeIF=[]
@@ -5121,11 +5191,12 @@ def translate_Ext(file_name):
         			allvariable[x]=membermethod.getLocalvar()[x]
 	
     			program,variablesarray,fname,iputmap,opvariablesarray=translate2IntForm(membermethod.getMethodname(),membermethod.getreturnType(),membermethod.getBody(),membermethod.getInputvar())
-								
+			
+			
 			functionName.append(fname)
 			
 			for var in iputmap:
-				functionName.append(var)
+				functionName.append(str(var))
 				
 			function.append(functionName)
 			
@@ -5162,6 +5233,7 @@ def translate_Ext(file_name):
  			
         programeIF.append(programe_array)
         
+               
         f_map,o_map,a_map,cm_map=translate1(programeIF,variables_list_map,1)
         
         if type(f_map) is dict and type(o_map) is dict and type(a_map) is dict and type(cm_map) is dict:
@@ -5230,7 +5302,9 @@ def translate2IntForm(function_name,function_type,function_body,parametermap):
     localvarmap=getVariables(function_body)
     
     print 'Program Body'
+    
     generator = c_generator.CGenerator()
+    
     print(generator.visit(function_body))
 
     membermethod=membermethodclass(function_name,function_type,parametermap,localvarmap,function_body,0,0)
@@ -5494,10 +5568,40 @@ def getVariables(function_body):
 		variable=variableclass(decl.name, var_type,None,degree,initial_value)
 	    else:
             	for child in decl.children():
-                	if type(child[1].type) is c_ast.IdentifierType:
-                    		var_type=child[1].type.names[0]
-			else:
-                    		initial_value=child[1].value
+            		if type(child[1]) is c_ast.TypeDecl:
+                		if type(child[1].type) is c_ast.IdentifierType:
+                    			var_type=child[1].type.names[0]
+				else:
+                    			initial_value=child[1].value
+                    	else:
+                    		if type(child[1]) is c_ast.FuncCall:
+			    		parameter=''
+					if child[1].args is not None:
+			    			for param in child[1].args.exprs:
+			    				if type(param) is c_ast.ID:
+			    					if parameter=='':
+					        			parameter = "expres('"+param.name+"')"
+					        		else:
+					        			parameter += ",expres('"+param.name+"')"
+			    				elif type(param) is c_ast.Constant:
+			    		    			if parameter=='':
+									parameter = "expres('"+param.value+"')"
+								else:
+					        			parameter += ",expres('"+param.value+"')"
+							else:
+								print '@@@@@@@@@@@'
+								print param.show()
+								print '@@@@@@@@@@@'
+						#initial_value="['"+child[1].name.name+"',"+parameter+"]"
+						initial_value="['"+child[1].name.name+"',"+parameter+"]"
+					else:
+						#initial_value="expres('"+child[1].name.name+"'"+")"
+						initial_value=child[1].name.name
+				else:
+					if type(child[1]) is c_ast.Constant:
+						initial_value=child[1].value
+					else:
+						initial_value=child[1].name
             	variable=variableclass(decl.name, var_type,None,None,initial_value)
             localvarmap[decl.name]=variable
     return localvarmap
@@ -5533,6 +5637,10 @@ def organizeStatementToObject_C(statements):
 			if type(statement) is c_ast.If:
 				count,ifclass=ifclassCreator_C(statement, degree, count)
 				expressions.append(ifclass)
+			else:
+				count=count+1
+				expression=expressionclass(statement, count, True,degree)
+				expressions.append(expression)
 					
      	return expressions
 
@@ -5627,6 +5735,52 @@ def programToinductiveDefination_C(expressions, allvariable):
                                         programsstart="['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
                                     else:
                                         programsstart+=",['-1','=',"+str(var)+","+str(expressionCreator_C(expression.getExpression().rvalue))+"]"+programsend
+                        elif type(expression.getExpression()) is c_ast.FuncCall:
+                        	parameter=''
+                        	statement=expression.getExpression()
+				if statement.args is not None:
+			    		for param in statement.args.exprs:
+			    			if type(param) is c_ast.ID:
+			    				if parameter=='':
+					        		parameter = "expres('"+param.name+"')"
+					        	else:
+					        		parameter += ",expres('"+param.name+"')"
+			    			elif type(param) is c_ast.Constant:
+			    		    		if parameter=='':
+								parameter = "expres('"+param.value+"')"
+							else:
+					        		parameter += ",expres('"+param.value+"')"
+						elif type(param) is c_ast.BinaryOp:
+			    		    		if parameter=='':
+								parameter =expressionCreator_C(param)
+							else:
+					        		parameter += ","+expressionCreator_C(param)
+					
+                                        if expression.getIsPrime()==False:
+						if programsstart=="":
+							programsstart="['-1','seq',"+"['"+statement.name.name+"',"+parameter+"]"
+					                programsend="]"
+						else:
+							programsstart+=","+"['-1','seq',"+"['"+statement.name.name+"',"+parameter+"]"
+							programsend+="]"
+					else:
+						if programsstart=="":
+					        	programsstart="['-1','seq',"+"['"+statement.name.name+"',"+parameter+"]"+programsend
+					        else:
+                                        		programsstart+=","+"['-1','seq',"+"['"+statement.name.name+"',"+parameter+"]"+programsend
+				else:
+  					if expression.getIsPrime()==False:
+						if programsstart=="":
+							programsstart="['-1','seq',"+"expres('"+statement.name.name+"'"+")"
+							programsend="]"
+						else:
+							programsstart+=","+"['-1','seq',"+"expres('"+statement.name.name+"'"+")"
+							programsend+="]"
+					else:
+						if programsstart=="":
+							programsstart="['-1','seq',"+"expres('"+statement.name.name+"'"+")"+programsend
+						else:
+                                        		programsstart+=","+"['-1','seq',"+"expres('"+statement.name.name+"'"+")"+programsend
 		elif type(expression) is blockclass:
 			predicatestmt="['-1','while',"+expressionCreator_C(expression.predicate)+","+programToinductiveDefination_C( expression.getExpression(), allvariable)+"]"
 			if expression.getIsPrime()==False:
@@ -5667,6 +5821,7 @@ def programToinductiveDefination_C(expressions, allvariable):
 					programsstart=predicatestmt+programsend
 				else:
 					programsstart+=","+predicatestmt+programsend
+		
 	if programsstart[0]==',':
 		programsstart=programsstart[1:]	
 	return programsstart
@@ -5767,18 +5922,26 @@ def expressionCreator_C(statement):
         return "expres('"+statement.value+"')"
     elif type(statement) is c_ast.FuncCall:
     	parameter=''
-    	for param in statement.args.exprs:
-    		if type(param) is c_ast.ID:
-    			if parameter=='':
-		        	parameter = "expres('"+param.name+"')"
-		        else:
-		        	parameter += ",expres('"+param.name+"')"
-    		elif type(param) is c_ast.Constant:
-    		    	if parameter=='':
-				parameter = "expres('"+param.value+"')"
+	if statement.args is not None:
+    		for param in statement.args.exprs:
+    			if type(param) is c_ast.ID:
+    				if parameter=='':
+		        		parameter = "expres('"+param.name+"')"
+		        	else:
+		        		parameter += ",expres('"+param.name+"')"
+    			elif type(param) is c_ast.Constant:
+    		    		if parameter=='':
+					parameter = "expres('"+param.value+"')"
+				else:
+		        		parameter += ",expres('"+param.value+"')"
 			else:
-		        	parameter += ",expres('"+param.value+"')"
-	return "['"+statement.name.name+"',"+parameter+"]"
+				print '@@@@@@@@@@@'
+				print param.show()
+				print '@@@@@@@@@@@'
+		
+		return "['"+statement.name.name+"',"+parameter+"]"
+	else:
+		return "expres('"+statement.name.name+"'"+")"
     elif type(statement) is c_ast.ArrayRef:
     	degree=0
        	stmt,degree=createArrayList_C(statement,degree)
@@ -5800,14 +5963,23 @@ def expressionCreator_C(statement):
                 expression+='and'
             elif statement.op == '||':
                 expression+='or'
+            elif statement.op == '!':
+                expression+='not'
             else:
                 expression+=statement.op
             if type(statement) is c_ast.BinaryOp:
             	expression+="',"+expressionCreator_C(statement.left)
             	expression+=','+expressionCreator_C(statement.right)
+            	expression+=']'
             else:
-            	expression+="',["+expressionCreator_C(statement.expr)
-            expression+=']'
+            	expression="expres('"
+            	if statement.op == '!':
+                	expression+='not'
+                else:
+                	expression+=statement.op
+            	expression+="',["+expressionCreator_C(statement.expr)+"]"
+            	expression+=')'
+            
             return expression
 
 
@@ -5824,11 +5996,22 @@ def createArrayList_C(statement,degree):
 		stmt=''
 		if type(statement.name) is c_ast.ArrayRef:
 			stmt,degree=createArrayList_C(statement.name,degree)
-			stmt+=",expres('"+statement.subscript.name+"')"
+			if type(statement.subscript) is c_ast.ID:
+				stmt+=",expres('"+statement.subscript.name+"')"
+			else:
+				stmt+=",expres('"+statement.subscript.value+"')"
 			return stmt,degree
 		else:
-			stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.name+"')"
-			return stmt,degree
+			if type(statement.name) is c_ast.ID:
+				if type(statement.subscript) is c_ast.ID:
+					stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.name+"')"
+					return stmt,degree
+				else:
+					stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.value+"')"
+					return stmt,degree
+			else:
+				stmt+="expres('"+statement.name.value+"')"+",expres('"+statement.subscript.value+"')"
+				return stmt,degree
 	else:
 		return "expres('"+statement.name+"')",degree
 
@@ -5879,11 +6062,71 @@ def syntaxTranslate(statements):
                 	stmts=statement.stmt.block_items
                 	statement=convertToIfElse(stmts,statement.cond)
                 	update_statements.append(statement)
+                elif type(statement) is c_ast.While:
+                	update_statements.append(c_ast.While(cond=syntaxTranslateStmt(statement.cond),stmt=c_ast.Compound(block_items=syntaxTranslate(statement.stmt.block_items))))
+                elif type(statement) is c_ast.If:
+                	update_statements.append(syntaxTranslateIf(statement))
+                elif type(statement) is c_ast.Assignment:
+                	if statement.op=='+=':
+                		update_statements.append(c_ast.Assignment(op='=', lvalue=statement.lvalue, rvalue=c_ast.BinaryOp(op='+', left=c_ast.ID(name=statement.lvalue.name), right=statement.rvalue)))
+                	elif statement.op=='-=':
+                		update_statements.append(c_ast.Assignment(op='=', lvalue=statement.lvalue, rvalue=c_ast.BinaryOp(op='-', left=c_ast.ID(name=statement.lvalue.name), right=statement.rvalue)))
+                	elif statement.op=='/=':
+                		update_statements.append(c_ast.Assignment(op='=', lvalue=statement.lvalue, rvalue=c_ast.BinaryOp(op='/', left=c_ast.ID(name=statement.lvalue.name), right=statement.rvalue)))
+                	elif statement.op=='%=':
+                		update_statements.append(c_ast.Assignment(op='=', lvalue=statement.lvalue, rvalue=c_ast.BinaryOp(op='%', left=c_ast.ID(name=statement.lvalue.name), right=statement.rvalue)))
+                	else:
+                		if type(statement.rvalue) is c_ast.Assignment:
+                			stmts=[]
+                			separateAllAssignment(statement,stmts)
+                			for stmt in stmts:
+                				update_statements.append(stmt)
+                		else:
+                			update_statements.append(c_ast.Assignment(op=statement.op, lvalue=statement.lvalue, rvalue=statement.rvalue))
                 else:
                         update_statements.append(statement)
         return update_statements
 
 
+
+def syntaxTranslateIf(statement):
+	new_iftrue=None
+	new_iffalse=None
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Compound:
+			new_iftrue=c_ast.Compound(block_items=syntaxTranslate(statement.iftrue.block_items))
+		else:
+			new_iftrue=syntaxTranslateStmt(statement.iftrue)
+		if type(statement.iffalse) is c_ast.Compound:
+			new_iffalse=c_ast.Compound(block_items=syntaxTranslate(statement.iffalse.block_items))
+		else:
+			if type(statement.iffalse) is c_ast.If:
+				new_iffalse=syntaxTranslateIf(statement.iffalse)
+			else:
+				new_iffalse=syntaxTranslateStmt(statement.iffalse)
+	return c_ast.If(cond=syntaxTranslateStmt(statement.cond), iftrue=new_iftrue, iffalse=new_iffalse)
+
+
+#
+# Change Assignment statement to a list of Assignment statements
+#
+
+
+def separateAllAssignment(statement,stmts):
+	if type(statement) is c_ast.Assignment:
+		if type(statement.rvalue) is c_ast.Assignment:
+			value=separateAllAssignment(statement.rvalue,stmts)
+			stmts.append(c_ast.Assignment(op=statement.op, lvalue=statement.lvalue, rvalue=value))
+			return value
+		else:
+			stmts.append(c_ast.Assignment(op=statement.op, lvalue=statement.lvalue, rvalue=statement.rvalue))
+			return statement.rvalue
+	return None
+	
+
+
+
+	
 
 """
 
@@ -5918,6 +6161,22 @@ def convertToIfElse(statements,condition):
 		
 
 	return None
+
+
+def syntaxTranslateStmt(statement):
+	if type(statement) is c_ast.UnaryOp:
+		if statement.op=='++' or statement.op=='p++':
+	        	return c_ast.Assignment(op='=',lvalue=statement.expr, rvalue=c_ast.BinaryOp(op='+',left=statement.expr, right=c_ast.Constant('int','1')))
+		elif statement.op=='--' or statement.op=='p--':
+	        	return c_ast.Assignment(op='=',lvalue=statement.expr, rvalue=c_ast.BinaryOp(op='-',left=statement.expr, right=c_ast.Constant('int','1')))
+	        else:
+                        return statement
+	else:
+		if type(statement) is c_ast.BinaryOp:
+			return c_ast.BinaryOp(op=statement.op,left=syntaxTranslateStmt(statement.left),right=syntaxTranslateStmt(statement.right))
+		else:
+			return statement
+
 
 
 """
@@ -6016,8 +6275,13 @@ Method for simplification of Condition
 
 def simplifyCondition(statement):
 	if type(statement) is c_ast.UnaryOp:
-		if statement.op=='!': 
-			return getComplement(statement.expr)
+		if statement.op=='!':
+			if type(statement.expr) is c_ast.ID:
+				return statement
+			elif type(statement.expr) is c_ast.Constant:
+				return statement
+			else:
+				return getComplement(statement.expr)
 		else:
 			return c_ast.UnaryOp(op=statement.op,expr=simplifyCondition(statement.expr))
 	elif type(statement) is c_ast.BinaryOp:
@@ -8332,5 +8596,399 @@ def reconstructStmt(statement,count,var_map,in_var_map,fun_count):
 	
 
 
+
+
+
+
+
+#
+#Reconstruct Program by Removing assert,assume,error
+#
+
+def reconstructPreDefinedFun(statements):
+	global fail_count
+	global error_count
+	global assume_count
+	global assert_count
+	global new_variable
+	statements=getPreDefinedFun(statements)
+    	update_statements=[]
+    	for var in new_variable.keys():
+    		temp=c_ast.Decl(name=var, quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname=var, quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+    		update_statements.append(temp)
+    	for statement in statements:
+    		update_statements.append(statement)
+    	new_variable={}
+    	return update_statements
+
+
+
+
+
+def getPreDefinedFun(statements):
+	update_statements=[]
+	global fail_count
+	global error_count
+	global assume_count
+	global assert_count
+	global new_variable
+	for statement in statements:
+		if type(statement) is c_ast.If:
+			stmt=getPreDefinedFunIf(statement)
+			if stmt is not None:
+				update_statements.append(stmt)
+		elif type(statement) is c_ast.While:
+			new_block_items1=getPreDefinedFun(statement.stmt.block_items)
+			update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=new_block_items1)))
+		elif type(statement) is c_ast.Label:
+			if statement.name=='ERROR':
+				fail_count=fail_count+1
+				update_statements.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(fail_count)+'_'+'FAILED'), rvalue=c_ast.Constant(type='int', value='1')))
+				new_variable['_'+str(fail_count)+'_'+'FAILED']='_'+str(fail_count)+'_'+'FAILED'
+				
+			else:
+				update_statements.append(statement)
+		elif type(statement) is c_ast.FuncCall:
+			parameters=[]
+			if statement.args is not None:
+				for param in statement.args.exprs:
+					if type(param) is c_ast.ID:
+						parameters.append(param)
+					elif type(param) is c_ast.Constant:
+						parameters.append(param)
+					elif type(param) is c_ast.BinaryOp:
+						parameters.append(param)
+			if statement.name.name=='__VERIFIER_assert':
+				new_statement=None
+				for parameter in parameters:
+					if new_statement is None:
+						assert_count=assert_count+1
+						new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assert_count)+'_'+'PROVE'), rvalue=parameter)
+						new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+					else:
+						assert_count=assert_count+1
+						new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='PROVE'+str(assert_count)), rvalue=parameter), right=new_statement)
+						new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+				update_statements.append(new_statement)
+			elif statement.name.name=='__VERIFIER_assume':
+				new_statement=None
+				for parameter in parameters:
+					if new_statement is None:
+						assume_count=assume_count+1
+						new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter)
+						new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+					else:
+						assume_count=assume_count+1
+						new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter), right=new_statement)
+						new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+				update_statements.append(new_statement)
+			else:
+				update_statements.append(statement)
+		
+		else:
+			update_statements.append(statement)
+	return update_statements
+	
+#
+#Reconstruct Program by Removing assert,assume,error
+#
+
+def getPreDefinedFunIf(statement):
+	new_iftrue=None
+	new_iffalse=None
+	global fail_count
+	global error_count
+	global assume_count
+	global assert_count
+	global new_variable
+	if type(statement) is c_ast.If:
+		if type(statement.iftrue) is c_ast.Label:
+			if statement.name=='ERROR':
+				fail_count=fail_count+1
+				new_iftrue=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(fail_count)+'_'+'FAILED'), rvalue=c_ast.Constant(type='int', value='1'))
+				new_variable['_'+str(fail_count)+'_'+'FAILED']='_'+str(fail_count)+'_'+'FAILED'
+			elif type(statement.iftrue) is c_ast.FuncCall:
+				parameters=[]
+				if statement.iftrue.args is not None:
+					for param in statement.iftrue.args.exprs:
+						if type(param) is c_ast.ID:
+							parameters.append(param)
+						elif type(param) is c_ast.Constant:
+							parameters.append(param)
+						elif type(param) is c_ast.BinaryOp:
+							parameters.append(param)
+				if statement.name.name=='__VERIFIER_assert':
+					new_statement=None
+					for parameter in parameters:
+						if new_statement is None:
+							assert_count=assert_count+1
+							new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assert_count)+'_'+'PROVE'), rvalue=parameter)
+							new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+						else:
+							assert_count=assert_count+1
+							new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assert_count)+'_'+'PROVE'), rvalue=parameter), right=new_statement)
+							new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+					new_iftrue=new_statement
+				elif statement.name.name=='__VERIFIER_assume':
+					new_statement=None
+					for parameter in parameters:
+						if new_statement is None:
+							assume_count=assume_count+1
+							new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter)
+							new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+						else:
+							assume_count=assume_count+1
+							new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter), right=new_statement)
+							new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+					new_iftrue=new_statement
+				else:
+					new_iftrue=statement.iftrue
+			else:
+				new_iftrue=statement.iftrue
+		elif type(statement.iftrue) is c_ast.Compound:
+			new_block_items=getPreDefinedFun(statement.iftrue.block_items)
+			new_iftrue=c_ast.Compound(block_items=new_block_items)
+		else:
+			
+			new_iftrue=statement.iftrue
+			
+		if type(statement.iffalse) is c_ast.Label:
+			if statement.name=='ERROR':
+				fail_count=fail_count+1
+				new_iftrue=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(fail_count)+'_'+'FAILED'), rvalue=c_ast.Constant(type='int', value='1'))
+				new_variable['_'+str(fail_count)+'_'+'FAILED']='_'+str(fail_count)+'_'+'FAILED'
+			elif type(statement.iffalse) is c_ast.FuncCall:
+				parameters=[]
+				if statement.iffalse.args is not None:
+					for param in statement.iftrue.args.exprs:
+						if type(param) is c_ast.ID:
+							parameters.append(param)
+						elif type(param) is c_ast.Constant:
+							parameters.append(param)
+						elif type(param) is c_ast.BinaryOp:
+							parameters.append(param)
+					if statement.name.name=='__VERIFIER_assert':
+						new_statement=None
+						for parameter in parameters:
+							if new_statement is None:
+								assert_count=assert_count+1
+								new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assert_count)+'_'+'PROVE'), rvalue=parameter)
+								new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+							else:
+								assert_count=assert_count+1
+								new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assert_count)+'_'+'PROVE'), rvalue=parameter), right=new_statement)
+								new_variable['_'+str(assert_count)+'_'+'PROVE']='_'+str(assert_count)+'_'+'PROVE'
+						new_iffalse=new_statement
+					elif statement.name.name=='__VERIFIER_assume':
+						new_statement=None
+						for parameter in parameters:
+							if new_statement is None:
+								assume_count=assume_count+1
+								new_statement= c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter)
+								new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+							else:
+								assume_count=assume_count+1
+								new_statement=c_ast.BinaryOp(op='&&', left=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(assume_count)+'_'+'ASSUME'), rvalue=parameter), right=new_statement)
+								new_variable['_'+str(assume_count)+'_'+'ASSUME']='_'+str(assume_count)+'_'+'ASSUME'
+						new_iffalse=new_statement
+					else:
+						new_iffalse=statement.iffalse
+			else:
+				new_iffalse=statement.iffalse
+		elif type(statement.iffalse) is c_ast.Compound:
+			new_block_items=getPreDefinedFun(statement.iffalse.block_items)
+			new_iffalse=c_ast.Compound(block_items=new_block_items)
+		else:
+			if type(statement.iffalse) is c_ast.If:
+				new_iffalse=getPreDefinedFunIf(statement.iffalse)
+			else:
+				new_iffalse=statement.iffalse
+				
+	if new_iftrue is not None and new_iffalse is None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
+	elif new_iftrue is not None and new_iffalse is not None:
+		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.Compound:
+		return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=new_iffalse, iffalse=None)
+	elif new_iffalse is not None and type(new_iffalse) is c_ast.If:
+		return new_iffalse
+	else:
+		return None
+
+
+#
+#Convert Initiation to assignments   
+#
+
+def construct_program(statements):
+    update_statements=[]
+    for statement in statements:
+    	if type(statement) is c_ast.Decl:
+    		if type(statement.type) is c_ast.ArrayDecl:
+                        program=''
+                        d_list=[]
+                        a_list=[]
+                        for x in range(0, int(statement.type.dim.value)):
+                            d_list.append('initial_value.exprs['+str(x)+']')
+                            a_list.append('['+str(x)+']') 
+                        d_list,a_list=getDimesnion(statement.type,d_list,a_list)
+                        temp='initial_value'
+                        
+                        if statement.init is not None:
+                        	initial_value=statement.init
+                        	for x1 in range(0, len(d_list)):
+                            		program=program+statement.name+a_list[x1]+'='+str(eval(d_list[x1]+'.value'))+';'
+                        	program='int main{'+program+'}'
+                        	parser = c_parser.CParser()
+                        	ast1 = parser.parse(program)
+                        	function_body = ast1.ext[0].body
+                        	
+                        	statement.init=None
+                        	update_statements.append(statement)
+                        	for new_statement in function_body.block_items:
+                        		update_statements.append(new_statement)
+                        else:
+                        	update_statements.append(statement)
+                        
+                else:
+                	update_statements.append(statement)
+        else:
+        	update_statements.append(statement)
+    return update_statements
+
+
+def getDimesnion(statement,d_list,a_list):
+    if type(statement.type) is c_ast.ArrayDecl:
+        d_list_update=[]
+        a_list_update=[]
+        for x1 in range(0, len(d_list)):
+            for x2 in range(0, int(statement.type.dim.value)):
+                d_list_update.append(d_list[x1]+'.exprs['+str(x2)+']')
+                a_list_update.append(a_list[x1]+'['+str(x2)+']')
+        return getDimesnion(statement.type,d_list_update,a_list_update)
+    else:
+        return d_list,a_list
+
+
+
+#
+#Remove C and C++ comments
+#
+
+text='a=a+1;// test test'
+
+def comment_remover(text):
+    def replacer(match):
+        s = match.group(0)
+        if s.startswith('/'):
+            return " " # note: a space and not an empty string
+        else:
+            return s
+    pattern = regex.compile(
+        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        regex.DOTALL | regex.MULTILINE
+    )
+    return regex.sub(pattern, replacer, text)
+    
+
+#
+#text='#include "assert.h"'
+#
+
+def include_remover(text):
+	status=False
+	find=regex.compile(r'\#(\s+)include|\#include')
+	group = find.search(text)
+	if group is not None:
+		status=True
+	return status
+    
+#
+#content='ram ram ram\n ram Ram Ram\n Jai Shree Ram'
+#
+def comment_remover_file(content):
+	lines = content.splitlines()
+	new_lines=[]
+	for line in lines:
+		if line is not None and include_remover( line )==False:
+			new_lines.append(comment_remover(line))
+	content = ''.join(new_lines)
+	return content
+
+
+#text='_PROVE'
+
+def isAssertion(text):
+	status=False
+	find=regex.compile(r'\_PROVE')
+	#find=regex.compile(r'(.+?)PROVE1')
+	group = find.search(text)
+	if group is not None:
+		status=True
+	return status
+
+
+def getAssertAssume(f,o,a,cm):
+	new_o={}
+	new_a=[]
+	assert_list=[]
+	assume_list=[]
+	for x in o:
+		if x.find('_PROVE')>0:
+        		assert_list.append(o[x])
+                elif x.find('_ASSUME')>0:
+        		assume_list.append(o[x])
+        	else:
+        		new_o[x]=o[x]
+        
+        for x in a:
+        	if x[0]=='i1' or x[0]=='i0':
+        		if x[3][0].find('_PROVE')>0:
+        			assert_list.append(x)
+        		elif x[3][0].find('_ASSUME')>0:
+                                assume_list.append(o[x])
+        		else:
+        			new_a.append(x)
+        	else:
+			new_a.append(x)
+      	        	
+        return f,new_o,new_a,extractAssert(assert_list,cm),extractAssume(assume_list)
+        
+        
+def extractAssert(assert_list,cm):
+	update_assert_stmts=[]
+	for stmt in assert_list:
+		if stmt[0]=='e':
+			update_stmt=[]
+			update_stmt.append('s0')
+			update_stmt.append(stmt[2])
+			key=wff2string1(update_stmt)
+			for iteam in cm:
+				key=key.replace(cm[iteam],iteam+'+1')
+			flag=False
+			for temp_stmt in assert_list:
+				if temp_stmt[0]=='i1':
+					lefthandstmt=expr2string1(temp_stmt[3])
+					if simplify(key)==simplify(lefthandstmt):
+						flag=True
+			if flag==False:
+				update_assert_stmts.append(update_stmt)
+		else:
+			update_assert_stmts.append(stmt)
+	return update_assert_stmts
+	
+def extractAssume(assume_list):
+	update_assume_stmts=[]
+	for stmt in assume_list:
+		if stmt[0]=='e':
+			update_stmt=[]
+			update_stmt.append('s0')
+			update_stmt.append(stmt[2])
+			update_assume_stmts.append(update_stmt)
+		else:
+			update_assume_stmts.append(stmt)
+	return update_assume_stmts
+        
+        
 
 
