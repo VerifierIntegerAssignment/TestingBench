@@ -913,7 +913,7 @@ def translate1(p,v,flag):
             print('\n5. Assertion :')
             for x in assert_list:
                 if x[0]=='i1':
-                    print 'ForAll '+x[2]+' ---> '+ expr2string1(x[4])
+                    print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
                 else:
                     print wff2string1(x)
         return f_map,o_map,a_map,cm_map
@@ -931,7 +931,7 @@ def translate1(p,v,flag):
     	print('\n5. Assertion :')
 	for x in assert_list:
                 if x[0]=='i1':
-                    print 'ForAll '+x[2]+' ----> '+ expr2string1(x[4])
+                    print 'ForAll '+x[2]+' ( '+ expr2string1(x[4]) +' ) '
                 else:
                     print wff2string1(x)
         return f,o,a,cm
@@ -947,7 +947,7 @@ def translate1(p,v,flag):
     	print('\n5. Assertion :')
 	for x in assert_list:
                 if x[0]=='i1':
-                    print 'ForAll '+x[2]+' '+ expr2string1(x[4])
+                    print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
                 else:
                     print wff2string1(x)
     	return f,o,a,cm
@@ -2446,6 +2446,8 @@ def solve_rec(e1,e2):
 		expr2varlist(e2[3],variable_list)
 		lefthandstmt_base=lefthandstmt_base.strip()
 		righthandstmt_base=righthandstmt_base.strip()
+		if 'ite' in righthandstmt_base: 
+			return None
 		lefthandstmt_base=simplify(lefthandstmt_base)
 		righthandstmt_base=simplify(righthandstmt_base)
 
@@ -4928,10 +4930,13 @@ def programTransformation(function_body):
     
     new_variable={}
         
-    #Syntax translation of the function body
+    #Handling Pointer
     
+    statements= handlingPointer(function_body.block_items)
         
-    statements=syntaxTranslate(function_body.block_items)
+    #Syntax translation of the function body
+        
+    statements=syntaxTranslate(statements)
     
    
     #Convert Initiation to assignments   
@@ -5558,7 +5563,9 @@ def getArrayDetails(statement,degree):
 
 def getVariables(function_body):
     localvarmap={}
-    for decl in function_body.block_items:
+    statements=handlingPointer(function_body.block_items)
+    #for decl in function_body.block_items:
+    for decl in statements:
         if type(decl) is c_ast.Decl:
             var_type=None
             initial_value=None
@@ -6044,20 +6051,39 @@ def syntaxTranslate(statements):
                                 update_statements.append(statement)
                 elif type(statement) is c_ast.For:
                         update_statements.append(statement.init)
-                        new_block_items=statement.stmt.block_items
-                        new_block_items.append(statement.next)
-                        new_block_items=syntaxTranslate(new_block_items)
-                        new_stmt=c_ast.Compound(block_items=new_block_items)
-                        update_while=c_ast.While(statement.cond,new_stmt)
-                        update_statements.append(update_while)
+                        if type(statement.stmt) is c_ast.Compound:
+                        	new_block_items=statement.stmt.block_items
+                        	new_block_items.append(statement.next)
+                        	new_block_items=syntaxTranslate(new_block_items)
+                        	new_stmt=c_ast.Compound(block_items=new_block_items)
+                        	update_while=c_ast.While(statement.cond,new_stmt)
+                        	update_statements.append(update_while)
+                        else:
+                        	new_block_items=[]
+                        	new_block_items.append(statement.stmt)
+                        	new_block_items.append(statement.next)
+				new_block_items=syntaxTranslate(new_block_items)
+				new_stmt=c_ast.Compound(block_items=new_block_items)
+				update_while=c_ast.While(statement.cond,new_stmt)
+                        	update_statements.append(update_while)
                 elif type(statement) is c_ast.DoWhile:
-		        new_block_items=statement.stmt.block_items
-		        for item in new_block_items:
-		        	update_statements.append(item)
-		        new_block_items=syntaxTranslate(new_block_items)
-		        new_stmt=c_ast.Compound(block_items=new_block_items)
-		        update_while=c_ast.While(statement.cond,new_stmt)
-                        update_statements.append(update_while)
+                	if type(statement.stmt) is c_ast.Compound:
+		        	new_block_items=statement.stmt.block_items
+		        	for item in new_block_items:
+		        		update_statements.append(item)
+		        	new_block_items=syntaxTranslate(new_block_items)
+		        	new_stmt=c_ast.Compound(block_items=new_block_items)
+		        	update_while=c_ast.While(statement.cond,new_stmt)
+                        	update_statements.append(update_while)
+                        else:
+                        	new_block_items=[]
+                        	new_block_items.append(statement.stmt)
+                        	for item in new_block_items:
+					update_statements.append(item)
+				new_block_items=syntaxTranslate(new_block_items)
+				new_stmt=c_ast.Compound(block_items=new_block_items)
+				update_while=c_ast.While(statement.cond,new_stmt)
+                        	update_statements.append(update_while)
                 elif type(statement) is c_ast.Switch:
                 	stmts=statement.stmt.block_items
                 	statement=convertToIfElse(stmts,statement.cond)
@@ -8825,24 +8851,24 @@ def construct_program(statements):
     for statement in statements:
     	if type(statement) is c_ast.Decl:
     		if type(statement.type) is c_ast.ArrayDecl:
-                        program=''
-                        d_list=[]
-                        a_list=[]
-                        for x in range(0, int(statement.type.dim.value)):
-                            d_list.append('initial_value.exprs['+str(x)+']')
-                            a_list.append('['+str(x)+']') 
-                        d_list,a_list=getDimesnion(statement.type,d_list,a_list)
-                        temp='initial_value'
                         
                         if statement.init is not None:
+                        	program=''
+			        d_list=[]
+			        a_list=[]
+			        for x in range(0, int(statement.type.dim.value)):
+			        	d_list.append('initial_value.exprs['+str(x)+']')
+			                a_list.append('['+str(x)+']') 
+			        d_list,a_list=getDimesnion(statement.type,d_list,a_list)
+                        	temp='initial_value'
+                        	
                         	initial_value=statement.init
                         	for x1 in range(0, len(d_list)):
                             		program=program+statement.name+a_list[x1]+'='+str(eval(d_list[x1]+'.value'))+';'
                         	program='int main{'+program+'}'
                         	parser = c_parser.CParser()
                         	ast1 = parser.parse(program)
-                        	function_body = ast1.ext[0].body
-                        	
+                        	function_body = ast1.ext[0].body                        	
                         	statement.init=None
                         	update_statements.append(statement)
                         	for new_statement in function_body.block_items:
@@ -8991,4 +9017,73 @@ def extractAssume(assume_list):
         
         
 
+#
+#Module to handle pointer 
+#
 
+
+def handlingPointer(statements):
+	update_statements=[]
+	for statement in statements:
+    		if type(statement) is c_ast.Decl:
+    			dimesnsion=0
+    			d_map={}
+    			flag_pointer=False
+    			type_name,dimesnsion,flag_pointer=getTypeNameDimension(statement,dimesnsion,flag_pointer)
+    			if flag_pointer==True:
+    				getDimension4mMalloc(statement,d_map)
+       				temp_program=type_name+' '+statement.name
+    				for x in range(0, len(d_map.keys())):
+    					if 'parameter'+str(x) in d_map.keys():
+    						temp_program+='['+d_map['parameter'+str(x)]+']'
+    				temp_program+=';'
+    				parser = c_parser.CParser()
+    				ast = parser.parse(temp_program)
+    				update_statements.append(ast.ext[0])
+    			else:
+    				update_statements.append(statement)
+    		else:
+    			update_statements.append(statement)
+    	return update_statements
+
+
+
+def getTypeNameDimension(statement,dimesnsion,flag_pointer):
+	if type(statement.type) is c_ast.PtrDecl:
+		dimesnsion=dimesnsion+1;
+		flag_pointer=True
+		return getTypeNameDimension(statement.type,dimesnsion,flag_pointer)
+	elif type(statement.type) is c_ast.ArrayDecl:
+		dimesnsion=dimesnsion+1;
+		return getTypeNameDimension(statement.type,dimesnsion,flag_pointer)
+	else:
+		if type(statement.type) is c_ast.TypeDecl:
+			if type(statement.type.type) is c_ast.IdentifierType:
+				if len(statement.type.type.names)>1:
+					return statement.type.type.names[1],dimesnsion,flag_pointer
+				else:
+					return statement.type.type.names[0],dimesnsion,flag_pointer
+				
+
+def getDimension4mMalloc(statement,d_map):
+	for child in statement.children():
+		if type(child[1]) is c_ast.FuncCall:
+			for param in child[1].args.exprs:
+				extractDimesion(param,d_map)
+		else:
+			getDimension4mMalloc(child[1],d_map)
+
+
+def extractDimesion(param,d_map):
+	if type(param) is c_ast.BinaryOp:
+		if type(param.left) is c_ast.ID and  type(param.right) is c_ast.UnaryOp:
+			d_map['parameter'+str(len(d_map.keys()))]=param.left.name
+		elif type(param.right) is c_ast.ID and  type(param.left) is c_ast.UnaryOp:
+			d_map['parameter'+str(len(d_map.keys()))]=param.right.name
+		elif type(param.left) is c_ast.ID and  type(param.right) is c_ast.BinaryOp:
+			d_map['parameter'+str(len(d_map.keys()))]=param.left.name
+		elif type(param.right) is c_ast.ID and  type(param.left) is c_ast.BinaryOp:
+			d_map['parameter'+str(len(d_map.keys()))]=param.right.name
+		elif type(param.right) is c_ast.BinaryOp and  type(param.left) is c_ast.BinaryOp:
+			extractDimesion(param.right,d_map)
+			extractDimesion(param.left,d_map)
