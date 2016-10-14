@@ -901,6 +901,9 @@ def translate1(p,v,flag):
             x,f,o,a,l = res[fn]
             print('Output for '+fn+':')
             f,o,a,cm = rec_solver(f,o,a)
+            
+            f,o,a,cm = getDummyFunction(f,o,a,cm)
+
             f_map[fn]=f
             o_map[fn]=o
             a_map[fn]=a
@@ -909,13 +912,18 @@ def translate1(p,v,flag):
             output_axioms_fn(f,o,a)
             print('\n4. Assumption :')
             for x in assume_list:
-        	print wff2string1(x)
+            	if x[0]=='i1':
+			print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
+		else:
+			if x[0]!='i0':
+                    		print wff2string1(x)
             print('\n5. Assertion :')
             for x in assert_list:
                 if x[0]=='i1':
                     print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
                 else:
-                    print wff2string1(x)
+                	if x[0]!='i0':
+                    		print wff2string1(x)
         return f_map,o_map,a_map,cm_map
         
     elif p[1]=='fun':
@@ -923,33 +931,45 @@ def translate1(p,v,flag):
         print('Output for ')
         print(fn)
         f,o,a,cm = rec_solver(f,o,a)
+        f,o,a,cm = getDummyFunction(f,o,a,cm)
         f,o,a,assert_list,assume_list=getAssertAssume(f,o,a)
         output_axioms_fn(f,o,a)
     	print('\n4. Assumption :')
 	for x in assume_list:
-        	print wff2string1(x)
+        	if x[0]=='i1':
+			print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
+		else:
+			if x[0]!='i0':
+                    		print wff2string1(x)
     	print('\n5. Assertion :')
 	for x in assert_list:
                 if x[0]=='i1':
                     print 'ForAll '+x[2]+' ( '+ expr2string1(x[4]) +' ) '
                 else:
-                    print wff2string1(x)
+                	if x[0]!='i0':
+                    		print wff2string1(x)
         return f,o,a,cm
     else:
         f,o,a,l = translate0(p,v,flag)
         #Add by Pritom Rajkhowa 10 June 2016
     	f,o,a,cm = rec_solver(f,o,a)
+    	f,o,a,cm = getDummyFunction(f,o,a,cm)
     	f,o,a,assert_list,assume_list=getAssertAssume(f,o,a)
     	output_axioms_fn(f,o,a)
     	print('\n4. Assumption :')
 	for x in assume_list:
-        	print wff2string1(x)
+	         if x[0]=='i1':
+	         	print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
+	         else:
+	                if x[0]!='i0':
+                    		print wff2string1(x)
     	print('\n5. Assertion :')
 	for x in assert_list:
                 if x[0]=='i1':
                     print 'ForAll '+x[2]+' ( '+ expr2string1(x[4])+' ) '
                 else:
-                    print wff2string1(x)
+                	if x[0]!='i0':
+                    		print wff2string1(x)
     	return f,o,a,cm
 
 
@@ -3514,8 +3534,8 @@ Validation of Variables
 """
 
 def validationOfInput(allvariable):
-	for variable in allvariable:
-		if variable=='S' or variable=='Q':
+	for variable in allvariable.keys():
+		if variable=='S' or variable=='Q' or variable=='N' or variable=='in' or variable=='is':
 			return True
 	return False
 
@@ -3527,18 +3547,18 @@ Translate Program to Logic
 """
 
 
-def translate(file_name):
-	if not(os.path.exists(file_name)): 
-		print "File not exits"
-		return
-	filename, file_extension = os.path.splitext(file_name)
-	if file_extension=='.java' or file_extension=='.Java' or file_extension=='.JAVA':
-		return translate_Java(file_name)
-	elif file_extension=='.c' or file_extension=='.C' :
-		return translate_C(file_name)
-	else:
-		return None
-	print file_extension
+#def translate(file_name):
+#	if not(os.path.exists(file_name)): 
+#		print "File not exits"
+#		return
+#	filename, file_extension = os.path.splitext(file_name)
+#	if file_extension=='.java' or file_extension=='.Java' or file_extension=='.JAVA':
+#		return translate_Java(file_name)
+#	elif file_extension=='.c' or file_extension=='.C' :
+#		return translate_C(file_name)
+#	else:
+#		return None
+#	print file_extension
 
 """
 
@@ -4066,8 +4086,8 @@ Validation of Variables
 """
 
 def validationOfInput(allvariable):
-	for variable in allvariable:
-		if variable=='S' or variable=='Q':
+	for variable in allvariable.keys():
+		if variable=='S' or variable=='Q' or variable=='N':
 			return True
 	return False
 
@@ -4927,6 +4947,7 @@ def programTransformation(function_body):
     global break_count
     global continue_count
     global new_variable
+    global dummyCount
     
     new_variable={}
         
@@ -4935,34 +4956,53 @@ def programTransformation(function_body):
     statements= handlingPointer(function_body.block_items)
         
     #Syntax translation of the function body
+    
+    #print '#######1'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######1'
         
     statements=syntaxTranslate(statements)
-    
+
+
+    statements=arrangeEmptyStatement(statements)
+    #print '#######1'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######1'
    
     #Convert Initiation to assignments   
     
     statements=construct_program(statements)
+    
+    #print '#######2'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######2'
 
     #print(generator.visit(c_ast.Compound(block_items=statements)))
     
     #Reconstruct Program by Removing assert,assume,error
     
     statements=reconstructPreDefinedFun(statements)
+    
+    #print '#######3'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######3'
         
     #Replace return by goto statement
         
     statements=remove_return(statements)
     
-    #print '#######'
+    #print '#######4'
     #print(generator.visit(c_ast.Compound(block_items=statements)))
-    #print '#######'
+    #print '#######4'
     
         
     #Replace goto structured statement
         
     statements=gotoremoval(statements)
     
-    
+    #print '#######5'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######5'
         
     update_statements=[]
         
@@ -4975,19 +5015,37 @@ def programTransformation(function_body):
     for statement in statements:
     	update_statements.append(statement)
         	
-            	
+    #print '#######6'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######6' 
+      
+      
     #Remove Empty If Loops  
     
     update_statements=removeEmptyIfLoop(update_statements)
         
     #Remove Dead Code
     
-        
+    #print '#######6'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######6'
+    
+    
     update_statements=removeDeadCode(update_statements)
+    
+    
+    #print '#######7'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######7'
         
     #Simplify Conditions
         
     statements=simplifyProgram(update_statements)
+    
+    
+    #print '#######8'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######8'
     
     #Add Break Removal Modules
     
@@ -4997,14 +5055,40 @@ def programTransformation(function_body):
     continue_count=0
     
     statements=getBreakStmt(statements,break_map)
+    
+    #print '#######9'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######9'
         
     update_statements=[]
     
     for var in new_variable.keys():
-    
     	temp=c_ast.Decl(name=var, quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname=var, quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
        	update_statements.append(temp)
         	
+    for statement in statements:
+    	update_statements.append(statement)
+    
+    dummyCount=0
+    
+    #print '#######10'
+    #print(generator.visit(c_ast.Compound(block_items=update_statements)))
+    #print '#######10'
+    
+    
+    statements=functionToAssignment(update_statements)
+    
+    
+    #print '#######11'
+    #print(generator.visit(c_ast.Compound(block_items=statements)))
+    #print '#######11'
+       
+    update_statements=[]
+    
+    if dummyCount>0:
+    	for x in range(0, dummyCount):
+    		temp=c_ast.Decl(name='_DUMMY'+str(x+1), quals=[], storage=[], funcspec=[], type=c_ast.TypeDecl(declname='_DUMMY'+str(x+1), quals=[], type=c_ast.IdentifierType(names=['int'])), init=c_ast.Constant(type='int', value='0'), bitsize=None)
+       		update_statements.append(temp)
     for statement in statements:
     	update_statements.append(statement)
 
@@ -5025,7 +5109,7 @@ def programTransformation(function_body):
 
 #file_name='mcmillan2006_true_unreach_call.c'
 
-def translate_Ext(file_name):
+def translate(file_name):
 	if not(os.path.exists(file_name)): 
         	print "File not exits"
 		return
@@ -5037,6 +5121,7 @@ def translate_Ext(file_name):
 	global error_count
 	global assume_count
         global assert_count
+        global defineMap
         fail_count=0
         error_count=0
         assume_count=0
@@ -5045,6 +5130,8 @@ def translate_Ext(file_name):
 		content = f.read()
 	content=comment_remover_file(content)
 	content=content.replace('\r','')
+	defineMap={}
+	content,defineMap=preProcessorHandling(content)
 	text = r""" """+content
 	parser = c_parser.CParser()
 	#ast = parse_file(file_name, use_cpp=True)
@@ -5074,13 +5161,14 @@ def translate_Ext(file_name):
 				
 				if function_decl.type.args is not None:
 					for param_decl in function_decl.type.args.params:
-				    		if type(param_decl.type) is c_ast.ArrayDecl:
-				    	    		degree=0
-				    	    		data_type,degree=getArrayDetails(param_decl,degree)
-							variable=variableclass(param_decl.name, data_type,None,degree,None)
-						else:
-							variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
-        					parametermap[param_decl.name]=variable
+						if param_decl.name is not None:
+				    			if type(param_decl.type) is c_ast.ArrayDecl:
+				    	    			degree=0
+				    	    			data_type,degree=getArrayDetails(param_decl,degree)
+								variable=variableclass(param_decl.name, data_type,None,degree,None)
+							else:
+								variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+        						parametermap[param_decl.name]=variable
 
 				membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,None,None,0,0)
 				functionvarmap[membermethod.getMethodname()]=membermethod
@@ -5103,26 +5191,45 @@ def translate_Ext(file_name):
     				counter=counter+1
     				if function_decl.type.args is not None:
 					for param_decl in function_decl.type.args.params:
-						if type(param_decl.type) is c_ast.ArrayDecl:
-							degree=0
-							data_type,degree=getArrayDetails(param_decl,degree)
-							variable=variableclass(param_decl.name, data_type,None,degree,None)
-						else:				
-							variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
-			    			parametermap[param_decl.name]=variable
+						if param_decl.name is not None:
+							if type(param_decl.type) is c_ast.ArrayDecl:
+								#print param_decl.show()
+								degree=0
+								data_type,degree=getArrayDetails(param_decl,degree)
+								variable=variableclass(param_decl.name, data_type,None,degree,None)
+							elif type(param_decl.type) is c_ast.PtrDecl:
+								stmt=pointerToArray(param_decl)
+								#print stmt.show()
+								if stmt is not None and type(stmt.type) is c_ast.ArrayDecl:
+									degree=0
+									data_type,degree=getArrayDetails(param_decl,degree)
+									variable=variableclass(stmt.name, data_type,None,degree,None)
+							
+									
+							else:				
+								variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+			    				parametermap[param_decl.name]=variable
     				if function_decl.name in functionvarmap.keys():
 					membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap,function_body,0,counter)
 					functionvarmap[function_decl.name]=membermethod
 				else:
 					if function_decl.type.args is not None:
 						for param_decl in function_decl.type.args.params:
-							if type(param_decl.type) is c_ast.ArrayDecl:
-								degree=0
-								data_type,degree=getArrayDetails(param_decl,degree)
-								variable=variableclass(param_decl.name, data_type,None,degree,None)
-							else:	
-								variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
-							parametermap[param_decl.name]=variable
+							if param_decl.name is not None:
+								if type(param_decl.type) is c_ast.ArrayDecl:
+									degree=0
+									data_type,degree=getArrayDetails(param_decl,degree)
+									variable=variableclass(param_decl.name, data_type,None,degree,None)
+								elif type(param_decl.type) is c_ast.PtrDecl:
+									stmt=pointerToArray(param_decl)
+									if stmt is not None and type(stmt.type) is c_ast.ArrayDecl:
+										degree=0
+										data_type,degree=getArrayDetails(param_decl,degree)
+										variable=variableclass(stmt.name, data_type,None,degree,None)
+								
+								else:	
+									variable=variableclass(param_decl.name, param_decl.type.type.names[0],None,None,None)
+								parametermap[param_decl.name]=variable
 					membermethod=membermethodclass(function_decl.name,function_decl.type.type.type.names[0],parametermap,localvarmap,function_body,0,counter)
 					functionvarmap[membermethod.getMethodname()]=membermethod
 
@@ -5194,7 +5301,10 @@ def translate_Ext(file_name):
 				allvariable[x]=membermethod.getInputvar()[x]
 			for x in membermethod.getLocalvar():
         			allvariable[x]=membermethod.getLocalvar()[x]
-	
+    			if validationOfInput(allvariable)==True:
+				print "Please Rename variable Name {S,Q,N} to other Name"
+          			return
+    
     			program,variablesarray,fname,iputmap,opvariablesarray=translate2IntForm(membermethod.getMethodname(),membermethod.getreturnType(),membermethod.getBody(),membermethod.getInputvar())
 			
 			
@@ -5236,9 +5346,10 @@ def translate_Ext(file_name):
 			function_vfact.append(parameters_type)
 			function_vfact_map[fname]=function_vfact		
  			
+
         programeIF.append(programe_array)
         
-               
+                      
         f_map,o_map,a_map,cm_map=translate1(programeIF,variables_list_map,1)
         
         if type(f_map) is dict and type(o_map) is dict and type(a_map) is dict and type(cm_map) is dict:
@@ -5306,9 +5417,11 @@ def translate2IntForm(function_name,function_type,function_body,parametermap):
        
     localvarmap=getVariables(function_body)
     
+    
     print 'Program Body'
     
     generator = c_generator.CGenerator()
+    
     
     print(generator.visit(function_body))
 
@@ -5443,7 +5556,8 @@ def translate_C(file_name):
     
     new_variable={}
         
-    #Syntax translation of the function body
+    defineMap={}
+   
         
     statements=function_body.block_items
        
@@ -5554,6 +5668,9 @@ def getArrayDetails(statement,degree):
 	if type(statement.type) is c_ast.ArrayDecl:
 		degree=degree+1
 		return getArrayDetails(statement.type,degree)
+	elif type(statement.type) is c_ast.PtrDecl:
+		degree=degree+1
+		return getArrayDetails(statement.type,degree)
 	else:
 		return statement.type.type.names[0],degree
 
@@ -5596,9 +5713,13 @@ def getVariables(function_body):
 								else:
 					        			parameter += ",expres('"+param.value+"')"
 							else:
-								print '@@@@@@@@@@@'
-								print param.show()
-								print '@@@@@@@@@@@'
+								if type(statement) is c_ast.ArrayRef:
+									degree=0
+									stmt,degree=createArrayList_C(statement,degree)
+								    	if parameter=='':
+										parameter = "expres('d"+str(degree)+'array'+"',["+stmt+"])"
+									else:
+		        							parameter += ","+"expres('d"+str(degree)+'array'+"',["+stmt+"])"
 						#initial_value="['"+child[1].name.name+"',"+parameter+"]"
 						initial_value="['"+child[1].name.name+"',"+parameter+"]"
 					else:
@@ -5607,8 +5728,11 @@ def getVariables(function_body):
 				else:
 					if type(child[1]) is c_ast.Constant:
 						initial_value=child[1].value
-					else:
+                                        elif type(child[1]) is c_ast.ID:
 						initial_value=child[1].name
+					else:
+                                                print expressionCreator_C(child[1])
+						initial_value=child[1]
             	variable=variableclass(decl.name, var_type,None,None,initial_value)
             localvarmap[decl.name]=variable
     return localvarmap
@@ -5667,12 +5791,22 @@ def ifclassCreator_C(statement, degree, count):
 	#print statement.iftrue.show()
 	#print statement.iffalse.show()
         if statement.iftrue is not None:
-            count,blockexpressions1=blockToExpressions_C(statement.iftrue.block_items, degree, count)
+        	if type(statement.iftrue) is c_ast.Compound:
+            		count,blockexpressions1=blockToExpressions_C(statement.iftrue.block_items, degree, count)
+            	else:
+            		new_block_items=[]
+            		new_block_items.append(statement.iftrue)
+            		count,blockexpressions1=blockToExpressions_C(new_block_items, degree, count)
         if statement.iffalse is not None and type(statement.iffalse) is c_ast.If:
         	count,blockexpressions2=ifclassCreator_C(statement.iffalse, degree, count)
         else:
         	if statement.iffalse is not None:
-            		count,blockexpressions2=blockToExpressions_C(statement.iffalse.block_items, degree, count)
+        		if type(statement.iffalse) is c_ast.Compound:
+        			count,blockexpressions2=blockToExpressions_C(statement.iffalse.block_items, degree, count)
+        		else:
+        			new_block_items=[]
+        			new_block_items.append(statement.iffalse)
+            			count,blockexpressions2=blockToExpressions_C(new_block_items, degree, count)
 	ifclass=Ifclass(predicate, blockexpressions1, blockexpressions2, count ,True ,degree)
 	return count,ifclass
 
@@ -5923,15 +6057,25 @@ Program Expression to a Array of Statement Compatible to Translator Program
 
 def expressionCreator_C(statement):
     expression=""
+    global defineMap
     if type(statement) is c_ast.ID:
-        return "expres('"+statement.name+"')"
+    	if statement.name in defineMap.keys():
+    		value = defineMap[statement.name]
+    		return "expres('"+value+"')"
+    	else:
+        	return "expres('"+statement.name+"')"
     elif type(statement) is c_ast.Constant:
-        return "expres('"+statement.value+"')"
+    	if statement.type=='char':
+		return "['char',expres("+statement.value+")]"
+    	else:
+        	return "expres('"+statement.value+"')"
     elif type(statement) is c_ast.FuncCall:
     	parameter=''
 	if statement.args is not None:
     		for param in statement.args.exprs:
     			if type(param) is c_ast.ID:
+    				if param.name in defineMap.keys():
+    					param.name = defineMap[param.name]
     				if parameter=='':
 		        		parameter = "expres('"+param.name+"')"
 		        	else:
@@ -5942,9 +6086,17 @@ def expressionCreator_C(statement):
 				else:
 		        		parameter += ",expres('"+param.value+"')"
 			else:
-				print '@@@@@@@@@@@'
-				print param.show()
-				print '@@@@@@@@@@@'
+				if type(statement) is c_ast.ArrayRef:
+				    	degree=0
+				       	stmt,degree=createArrayList_C(statement,degree)
+    					if parameter=='':
+						parameter = "expres('d"+str(degree)+'array'+"',["+stmt+"])"
+					else:
+		        			parameter += ","+"expres('d"+str(degree)+'array'+"',["+stmt+"])"
+				
+				#print '@@@@@@@@@@@RamRam'
+				#print param.show()
+				#print '@@@@@@@@@@@'
 		
 		return "['"+statement.name.name+"',"+parameter+"]"
 	else:
@@ -6013,6 +6165,9 @@ def createArrayList_C(statement,degree):
 				if type(statement.subscript) is c_ast.ID:
 					stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.name+"')"
 					return stmt,degree
+				elif type(statement.subscript) is c_ast.BinaryOp:
+					stmt+="expres('"+statement.name.name+"')"+","+expressionCreator_C(statement.subscript)
+					return stmt,degree
 				else:
 					stmt+="expres('"+statement.name.name+"')"+",expres('"+statement.subscript.value+"')"
 					return stmt,degree
@@ -6053,6 +6208,8 @@ def syntaxTranslate(statements):
                         update_statements.append(statement.init)
                         if type(statement.stmt) is c_ast.Compound:
                         	new_block_items=statement.stmt.block_items
+                        	if new_block_items is None:
+                                    new_block_items=[]
                         	new_block_items.append(statement.next)
                         	new_block_items=syntaxTranslate(new_block_items)
                         	new_stmt=c_ast.Compound(block_items=new_block_items)
@@ -6069,6 +6226,8 @@ def syntaxTranslate(statements):
                 elif type(statement) is c_ast.DoWhile:
                 	if type(statement.stmt) is c_ast.Compound:
 		        	new_block_items=statement.stmt.block_items
+		        	if new_block_items is None:
+                                    new_block_items=[]
 		        	for item in new_block_items:
 		        		update_statements.append(item)
 		        	new_block_items=syntaxTranslate(new_block_items)
@@ -6109,6 +6268,21 @@ def syntaxTranslate(statements):
                 				update_statements.append(stmt)
                 		else:
                 			update_statements.append(c_ast.Assignment(op=statement.op, lvalue=statement.lvalue, rvalue=statement.rvalue))
+                
+                elif type(statement) is c_ast.Label:
+			update_statements.append(c_ast.Label(name=statement.name, stmt=None))
+			if type(statement.stmt) is c_ast.Compound:
+				new_block_items=syntaxTranslate(statement.stmt.block_items)
+				for item in new_block_items:
+					update_statements.append(item)	
+			else:
+				if statement.stmt is not None:
+					new_block_items=[]
+					new_block_items.append(statement.stmt)
+					new_block_items=syntaxTranslate(new_block_items)
+					for item in new_block_items:
+						update_statements.append(item)
+
                 else:
                         update_statements.append(statement)
         return update_statements
@@ -6120,16 +6294,37 @@ def syntaxTranslateIf(statement):
 	new_iffalse=None
 	if type(statement) is c_ast.If:
 		if type(statement.iftrue) is c_ast.Compound:
-			new_iftrue=c_ast.Compound(block_items=syntaxTranslate(statement.iftrue.block_items))
+			if statement.iftrue.block_items is not None:
+				new_iftrue=c_ast.Compound(block_items=syntaxTranslate(statement.iftrue.block_items))
+			else:
+				new_iftrue=c_ast.Compound(block_items=[])
 		else:
-			new_iftrue=syntaxTranslateStmt(statement.iftrue)
+			if type(statement) is c_ast.UnaryOp:
+				new_iftrue=syntaxTranslateStmt(statement.iftrue)
+			elif type(statement) is c_ast.BinaryOp:
+				new_iftrue=syntaxTranslateStmt(statement.iftrue)
+			else:
+				new_blocks=[]
+				new_blocks.append(statement.iftrue)
+				new_iftrue=c_ast.Compound(block_items=syntaxTranslate(new_blocks))
+				
 		if type(statement.iffalse) is c_ast.Compound:
-			new_iffalse=c_ast.Compound(block_items=syntaxTranslate(statement.iffalse.block_items))
+			if statement.iffalse.block_items is not None:
+				new_iffalse=c_ast.Compound(block_items=syntaxTranslate(statement.iffalse.block_items))
+			else:
+				new_iffalse=c_ast.Compound(block_items=[])
 		else:
 			if type(statement.iffalse) is c_ast.If:
 				new_iffalse=syntaxTranslateIf(statement.iffalse)
 			else:
-				new_iffalse=syntaxTranslateStmt(statement.iffalse)
+				if type(statement) is c_ast.UnaryOp:
+					new_iffalse=syntaxTranslateStmt(statement.iffalse)
+				elif type(statement) is c_ast.BinaryOp:
+					new_iffalse=syntaxTranslateStmt(statement.iffalse)
+				else:
+					new_blocks=[]
+					new_blocks.append(statement.iffalse)
+					new_iffalse=c_ast.Compound(block_items=syntaxTranslate(new_blocks))
 	return c_ast.If(cond=syntaxTranslateStmt(statement.cond), iftrue=new_iftrue, iffalse=new_iffalse)
 
 
@@ -6426,10 +6621,35 @@ def gotoremoval(statements):
 		label_map=constructLabelTable(statements,0,0,0)
 		updateLabelTable(statements,0,0,0,label_map)
 		keys=label_map.keys()
+		
+		for key in keys:
+			labelMap={}
+			listL=label_map[key]
+			if len(listL[3])>1:
+		    		statements=removeMultipleLabel(statements,key,labelMap)
+		    		statements=addMultipleLabel(statements,key,labelMap)
+		    		label_map=constructLabelTable(statements,0,0,0)
+    				updateLabelTable(statements,0,0,0,label_map)
+    			else:
+    				if len(listL[3])==0:
+					statements=removeOrphanLabel(statements,key)
+					label_map=constructLabelTable(statements,0,0,0)
+    					updateLabelTable(statements,0,0,0,label_map)
+    			
+    		#print '#################RamRam'
+    		#body_comp = c_ast.Compound(block_items=statements)
+    		#generator = c_generator.CGenerator()   
+    	 	#print(generator.visit(body_comp))
+    	 	#print '#################RamRam'
+		label_map=constructLabelTable(statements,0,0,0)
+    		updateLabelTable(statements,0,0,0,label_map)
+
+		keys=label_map.keys()
 		if len(keys)>0:
 			item=keys[0]
 			element = label_map[item]
     			lists = element[3]
+    			
     			for list in lists:
     				if element[0]>=list[0] and element[1]>=list[1]:
         				statements=goto_finder(statements,item)
@@ -6514,6 +6734,9 @@ def remove_goto_block(statements,label):
 	new_statements2=[]
 	if flag_block_label==True and flag_block_goto==True:
 		for statement in statements:
+			#print type(statement)
+			#print flag_label
+			#print flag_goto
 			if type(statement) is c_ast.Label:
 				if label==statement.name:
 					if flag_goto==True:
@@ -6524,6 +6747,8 @@ def remove_goto_block(statements,label):
 							if statement.stmt is not None and statement.stmt.block_items is not None:
 								for stmt in statement.stmt.block_items:
 									new_statements1.append(stmt)
+						else:
+							new_statements1.append(statement.stmt)
 						flag_label=False
 						flag_goto=False
 					else:
@@ -6536,6 +6761,7 @@ def remove_goto_block(statements,label):
 						flag_label=True
 				else:
 					if flag_goto==True or flag_label==True:
+						
 						if type(statement.stmt) is c_ast.Assignment:
 							new_statements2.append(statement.stmt)
 						elif type(statement.stmt) is c_ast.Compound:
@@ -6617,7 +6843,13 @@ def constructLabelTable_If(statement,level,block,lineCount):
 	label_map={}
 	if type(statement) is c_ast.If:
 			if type(statement.iftrue) is c_ast.Label:
-				label_map[statement.iftrue.name]=statement.iftrue.name
+				lineCount=lineCount+1	            				
+				info=[]
+				info.append(level)
+				info.append(block)
+				info.append(lineCount)
+				info.append([])
+				label_map[statement.iftrue.name]=info
 			else:
 	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
 	            			for element in statement.iftrue.block_items:
@@ -6646,6 +6878,12 @@ def constructLabelTable_If(statement,level,block,lineCount):
             							lineCount=lineCount+1
 	
 			if type(statement.iffalse) is c_ast.Label:
+				lineCount=lineCount+1	            				
+				info=[]
+				info.append(level)
+				info.append(block)
+				info.append(lineCount)
+				info.append([])
 				label_map[statement.iffalse.name]=statement.iffalse.name
 			else:
 				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
@@ -6712,7 +6950,8 @@ def updateLabelTable_If(statement,level,block,lineCount,label_map):
 				if statement.iftrue.name in label_map.keys():
 					info_update=label_map[statement.iftrue.name]
 				        list=info_update[3]
-	            			list.append(info)
+				        list.append(info)		
+
 			else:
 	            		if type(statement.iftrue) is c_ast.Compound and statement.iftrue.block_items is not None:
 	            			for element in statement.iftrue.block_items:
@@ -6749,7 +6988,7 @@ def updateLabelTable_If(statement,level,block,lineCount,label_map):
 				if statement.iffalse.name in label_map.keys():
 					info_update=label_map[statement.iffalse.name]
 					list=info_update[3]
-	            			list.append(info)
+					list.append(info)
 			else:
 				if type(statement.iffalse) is c_ast.Compound and statement.iffalse.block_items is not None:
 	            			for element in statement.iffalse.block_items:
@@ -6956,7 +7195,6 @@ def check_goto_block_If(statement,label):
 	            				if type(element) is c_ast.Goto:
                                                         if element.name==label:
                                                                 status = True
-                                                                
 			if type(statement.iffalse) is c_ast.Label:
                                 if statement.iffalse.name==label:
                                         status = True
@@ -7183,8 +7421,10 @@ def gotomoveoutrec(statements,label):
 	condition=None
 	for statement in statements:
 		if type(statement) is c_ast.If:
-			flag_block2,condition=check_goto_If(statement,label)
+			flag_block2,condition_new=check_goto_If(statement,label)
 			flag_stmt2=check_goto_block_If(statement,label)
+			if condition_new is not None:
+				condition=condition_new
 			if flag_block2==True and flag_stmt2==False:
 				statement=gotomoveoutrec_if(statement,label)
                         	new_statements1.append(statement)
@@ -7201,8 +7441,10 @@ def gotomoveoutrec(statements,label):
                         		new_statements1.append(statement)
 
 		elif type(statement) is c_ast.While:
-			flag_block2,condition=check_goto(statement.stmt.block_items,label)
+			flag_block2,condition_new=check_goto(statement.stmt.block_items,label)
 			flag_stmt2=check_goto_block(statement.stmt.block_items,label)
+			if condition_new is not None:
+				condition=condition_new
 			if flag_block2==True and flag_stmt2==False:
 				stmts=gotomoveoutrec(statement.stmt.block_items,label)
 				stmts.append(c_ast.If(cond=condition, iftrue=c_ast.Break(), iffalse=None))
@@ -7225,7 +7467,8 @@ def gotomoveoutrec(statements,label):
 	if condition is not None:
                 if len(new_statements2)>0:
                 	new_statements1.append(c_ast.If(cond=c_ast.UnaryOp(op='!', expr=condition), iftrue=c_ast.Compound(block_items=new_statements2), iffalse=None))
-                statements=new_statements1
+        	statements=new_statements1
+
         return statements
 
 
@@ -7694,7 +7937,9 @@ def removeEmptyIfLoop(statements):
 			new_block_items=removeEmptyIfLoop(statement.stmt.block_items)
 			update_statements.append(c_ast.While(cond=statement.cond, stmt=c_ast.Compound(block_items=new_block_items)))
 		else:
-			update_statements.append(statement)
+			if statement is not None:
+				if type(statement) is not c_ast.EmptyStatement:
+					update_statements.append(statement)
 	return update_statements
 			
 			
@@ -7713,7 +7958,10 @@ def removeEmptyIfLoop_If(statement):
 				else:
 					new_iftrue=c_ast.Compound(block_items=new_block)
 		else:
-			new_iftrue=statement.iftrue
+			if type(statement.iftrue) is c_ast.EmptyStatement:
+				new_iftrue=None
+			else:
+				new_iftrue=statement.iftrue
 				
 		if type(statement.iffalse) is c_ast.Compound:
 			if len(statement.iffalse.block_items)==0:
@@ -7729,7 +7977,10 @@ def removeEmptyIfLoop_If(statement):
 			if result is not None:
 				new_iffalse=result
 		else:
-			new_iffalse=statement.iffalse
+			if type(statement.iffalse) is c_ast.EmptyStatement:
+				new_iftrue=None
+			else:
+				new_iffalse=statement.iffalse
 	
 	
 	if new_iftrue is not None and new_iffalse is None:
@@ -7765,6 +8016,22 @@ def returnReplacement(statements,end_label_map):
 				label='Label'+str(len(end_label_map.keys())+1)
 				update_statements.append(c_ast.Goto(name=label))
 				end_label_map[label]=label
+		elif type(statement) is c_ast.Label:
+			update_statements.append(c_ast.Label(name=statement.name, stmt=None))
+			if type(statement.stmt) is c_ast.Return:
+				if statement.stmt.expr is not None:
+					label='Label'+str(len(end_label_map.keys())+1)
+					update_statements.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name='RET'), rvalue=statement.stmt.expr))
+					update_statements.append(c_ast.Goto(name=label))
+					end_label_map[label]=label
+				else:
+					label='Label'+str(len(end_label_map.keys())+1)
+					update_statements.append(c_ast.Goto(name=label))
+					end_label_map[label]=label
+			else:
+				if statement.stmt is not None:
+					update_statements.append(statement.stmt)
+			
 		else:
 			update_statements.append(statement)
 	return update_statements
@@ -7925,7 +8192,7 @@ def getBreakStmtIf(statement,break_map):
 		if type(statement.iftrue) is c_ast.Break:
                         new_block_items=[]
                         break_count=break_count+1
-                        var_name='continue_'+str(break_count)+'_flag'
+                        var_name='break_'+str(break_count)+'_flag'
                         new_variable[var_name]=var_name
                         new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
 			break_map[var_name]='Break'
@@ -7933,7 +8200,7 @@ def getBreakStmtIf(statement,break_map):
 		elif type(statement.iftrue) is c_ast.Continue:
 		        new_block_items=[]
 		        break_count=break_count+1
-		        var_name='break_'+str(continue_count)+'_flag'
+		        var_name='continue_'+str(continue_count)+'_flag'
 		        new_variable[var_name]=var_name
 		        new_block_items.append(c_ast.Assignment(op='=', lvalue=c_ast.ID(name=var_name), rvalue=c_ast.Constant(type='int', value='1')))
 			break_map[var_name]='Continue'
@@ -7941,6 +8208,8 @@ def getBreakStmtIf(statement,break_map):
 		elif type(statement.iftrue) is c_ast.Compound:
 			new_block_items=getBreakStmt(statement.iftrue.block_items,break_map)
 			new_iftrue=c_ast.Compound(block_items=new_block_items)
+		else:
+			new_iftrue=statement.iftrue
 			
 		if type(statement.iffalse) is c_ast.Break:
                         new_block_items=[]
@@ -7964,6 +8233,8 @@ def getBreakStmtIf(statement,break_map):
 		else:
 			if type(statement.iffalse) is c_ast.If:
 				new_iffalse=getBreakStmtIf(statement.iffalse,break_map)
+			else:
+				new_iffalse=statement.iffalse
 	if new_iftrue is not None and new_iffalse is None:
 		return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
 	elif new_iftrue is not None and new_iffalse is not None:
@@ -8684,6 +8955,10 @@ def getPreDefinedFun(statements):
 						parameters.append(param)
 					elif type(param) is c_ast.BinaryOp:
 						parameters.append(param)
+					elif type(param) is c_ast.FuncCall:
+						parameters.append(param)
+					else:
+						parameters.append(param)
 			if statement.name.name=='__VERIFIER_assert':
 				new_statement=None
 				for parameter in parameters:
@@ -8729,7 +9004,7 @@ def getPreDefinedFunIf(statement):
 	global new_variable
 	if type(statement) is c_ast.If:
 		if type(statement.iftrue) is c_ast.Label:
-			if statement.name=='ERROR':
+			if statement.iftrue.name=='ERROR':
 				fail_count=fail_count+1
 				new_iftrue=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(fail_count)+'_'+'FAILED'), rvalue=c_ast.Constant(type='int', value='1'))
 				new_variable['_'+str(fail_count)+'_'+'FAILED']='_'+str(fail_count)+'_'+'FAILED'
@@ -8742,6 +9017,10 @@ def getPreDefinedFunIf(statement):
 						elif type(param) is c_ast.Constant:
 							parameters.append(param)
 						elif type(param) is c_ast.BinaryOp:
+							parameters.append(param)
+						elif type(param) is c_ast.FuncCall:
+							parameters.append(param)
+						else:
 							parameters.append(param)
 				if statement.name.name=='__VERIFIER_assert':
 					new_statement=None
@@ -8779,7 +9058,7 @@ def getPreDefinedFunIf(statement):
 			new_iftrue=statement.iftrue
 			
 		if type(statement.iffalse) is c_ast.Label:
-			if statement.name=='ERROR':
+			if statement.iffalse.name=='ERROR':
 				fail_count=fail_count+1
 				new_iftrue=c_ast.Assignment(op='=', lvalue=c_ast.ID(name='_'+str(fail_count)+'_'+'FAILED'), rvalue=c_ast.Constant(type='int', value='1'))
 				new_variable['_'+str(fail_count)+'_'+'FAILED']='_'+str(fail_count)+'_'+'FAILED'
@@ -8851,7 +9130,6 @@ def construct_program(statements):
     for statement in statements:
     	if type(statement) is c_ast.Decl:
     		if type(statement.type) is c_ast.ArrayDecl:
-                        
                         if statement.init is not None:
                         	program=''
 			        d_list=[]
@@ -8899,11 +9177,13 @@ def getDimesnion(statement,d_list,a_list):
 
 #
 #Remove C and C++ comments
+# 
 #
 
 text='a=a+1;// test test'
 
 def comment_remover(text):
+    text=text.replace('extern void __VERIFIER_error() __attribute__ ((__noreturn__));','')
     def replacer(match):
         s = match.group(0)
         if s.startswith('/'):
@@ -8930,16 +9210,50 @@ def include_remover(text):
 	return status
     
 #
-#content='ram ram ram\n ram Ram Ram\n Jai Shree Ram'
+#content='   /**   * Constructor, which takes the output of a toStringFull() and converts it back   * into an Id.  Should not normally be used.   *   * @param hex The hexadeciaml representation from the toStringFull()   *//*  public static Id build(char[] chars, int offset, int length) {    int[] array = new int[nlen];        for (int i=0; i<nlen; i++)       for (int j=0; j<8; j++)         array[nlen-1-i] =(array[nlen-1-i] << 4) | trans(chars[offset + 8*i + j]);        return build(array);  }  */int main() {  int offset, length, nlen = __VERIFIER_nondet_int();  i'
 #
 def comment_remover_file(content):
-	lines = content.splitlines()
+	new_content=content.replace('/*','\n/*').replace('*/','\n*/')        
+	lines = new_content.splitlines()
 	new_lines=[]
 	for line in lines:
 		if line is not None and include_remover( line )==False:
 			new_lines.append(comment_remover(line))
 	content = ''.join(new_lines)
+	content=comment_remover_update(content)
 	return content
+
+
+def comment_remover_update(text):
+	for x in regex.findall(r'("[^\n]*"(?!\\))|(//[^\n]*$|/(?!\\)\*[\s\S]*?\*(?!\\)/)',text,8):text=text.replace(x[1],'')
+ 	return text
+
+
+#
+#Pre-Processig of Pre-Processor
+#content='#include "assert.h #define LIMIT 1000000 #define LIMIT1 1000000'
+#
+
+def preProcessorHandling(content):
+	new_content=content.replace(';',';\n').replace('}','}\n').replace('#','\n#').replace('int','\nint').replace('void','\nvoid').replace('void','\nvoid').replace('extern','\nextern ').replace('unsigned','\nunsigned').replace('Char','\nChar')   
+	lines = new_content.splitlines()
+	new_lines=[]
+	defineMap={}
+	for line in lines:
+		definematch = regex.match("#define\\s+(\\w+)\\s+(.*)",line)
+		if definematch:
+			#deal with define statements by saving it in a dict
+			#definedict[match.group(1)] = definedict[match.group(2)]
+			defineMap[definematch.group(1)]=str(simplify(definematch.group(2)))
+			new_lines.append(line)
+	for line in new_lines:
+		content=content.replace(line,'')
+	return content,defineMap
+
+
+
+
+
 
 
 #text='_PROVE'
@@ -8968,17 +9282,24 @@ def getAssertAssume(f,o,a,cm):
         		new_o[x]=o[x]
         
         for x in a:
-        	if x[0]=='i1' or x[0]=='i0':
+        	if x[0]=='i1':
         		if x[3][0].find('_PROVE')>0:
         			assert_list.append(x)
         		elif x[3][0].find('_ASSUME')>0:
-                                assume_list.append(o[x])
+                                assume_list.append(x)
+        		else:
+        			new_a.append(x)
+        	elif x[0]=='i0':
+        		if x[2][0].find('_PROVE')>0:
+        			assert_list.append(x)
+        		elif x[2][0].find('_ASSUME')>0:
+                                assume_list.append(x)
         		else:
         			new_a.append(x)
         	else:
 			new_a.append(x)
       	        	
-        return f,new_o,new_a,extractAssert(assert_list,cm),extractAssume(assume_list)
+        return f,new_o,new_a,extractAssert(assert_list,cm),extractAssume(assume_list,cm)
         
         
 def extractAssert(assert_list,cm):
@@ -8995,25 +9316,41 @@ def extractAssert(assert_list,cm):
 			for temp_stmt in assert_list:
 				if temp_stmt[0]=='i1':
 					lefthandstmt=expr2string1(temp_stmt[3])
-					if simplify(key)==simplify(lefthandstmt):
-						flag=True
+					if 'and' not in str(key) and 'or' not in str(key):
+						if simplify(key)==simplify(lefthandstmt):
+							flag=True
 			if flag==False:
 				update_assert_stmts.append(update_stmt)
 		else:
 			update_assert_stmts.append(stmt)
 	return update_assert_stmts
 	
-def extractAssume(assume_list):
+
+
+def extractAssume(assume_list,cm):
 	update_assume_stmts=[]
 	for stmt in assume_list:
 		if stmt[0]=='e':
 			update_stmt=[]
 			update_stmt.append('s0')
 			update_stmt.append(stmt[2])
-			update_assume_stmts.append(update_stmt)
+			key=wff2string1(update_stmt)
+			for iteam in cm:
+				key=key.replace(cm[iteam],iteam+'+1')
+			flag=False
+			for temp_stmt in assume_list:
+				if temp_stmt[0]=='i1':
+					lefthandstmt=expr2string1(temp_stmt[3])
+					if 'and' not in str(key) and 'or' not in str(key):
+						if simplify(key)==simplify(lefthandstmt):
+							flag=True
+			if flag==False:
+				update_assume_stmts.append(update_stmt)
 		else:
 			update_assume_stmts.append(stmt)
 	return update_assume_stmts
+	
+
         
         
 
@@ -9087,3 +9424,463 @@ def extractDimesion(param,d_map):
 		elif type(param.right) is c_ast.BinaryOp and  type(param.left) is c_ast.BinaryOp:
 			extractDimesion(param.right,d_map)
 			extractDimesion(param.left,d_map)
+
+
+def pointerToArray(statement):
+	if type(statement) is c_ast.Decl:
+    		dimesnsion=0
+    		d_map={}
+    		flag_pointer=False
+    		type_name,dimesnsion,flag_pointer=getTypeNameDimension(statement,dimesnsion,flag_pointer)
+    		if flag_pointer==True:
+    			getDimension4mMalloc(statement,d_map)
+       			temp_program=type_name+' '+statement.name
+    			for x in range(0, len(d_map.keys())):
+    				if 'parameter'+str(x) in d_map.keys():
+    					temp_program+='['+d_map['parameter'+str(x)]+']'
+    			temp_program+=';'
+    			parser = c_parser.CParser()
+    			ast = parser.parse(temp_program)
+    			return ast.ext[0]
+    		else:
+    			return statement
+  			
+
+
+
+def arrangeEmptyStatement(statements):
+    update_statements=[]
+    for statement in statements:
+        if type(statement) is c_ast.If:
+            stmt=arrangeEmptyStatementIf(statement)
+            if stmt is not None:
+            	update_statements.append(stmt)
+        elif type(statement) is c_ast.While:
+            if type(statement.stmt) is c_ast.EmptyStatement:
+                update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=[])))
+            elif statement.stmt.block_items is not None:
+            	stmt=arrangeEmptyStatement(statement.stmt.block_items)
+            	if stmt is not None:
+                	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=stmt)))
+                else:
+                	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=[])))
+            else:
+                update_statements.append(statement)
+        else:
+            update_statements.append(statement)
+    return update_statements
+           
+
+    
+
+
+def arrangeEmptyStatementIf(statement):
+    new_iftrue=None
+    new_iffalse=None
+    if type(statement) is c_ast.If:
+        if type(statement.iftrue) is c_ast.EmptyStatement:
+            if type(statement.iffalse) is c_ast.Compound:
+                return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=statement.iffalse, iffalse=None)
+            else:
+                return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=statement.iffalse, iffalse=None)
+        elif type(statement.iftrue) is c_ast.Compound:
+            if statement.iftrue.block_items is not None:
+                new_block_items=arrangeEmptyStatement(statement.iftrue.block_items)
+                new_iftrue=c_ast.Compound(block_items=new_block_items)
+            else:
+                new_iftrue=statement.iftrue
+        else:
+            new_iftrue=statement.iftrue
+            
+        if type(statement.iffalse) is c_ast.Compound:
+            if statement.iffalse.block_items is not None:
+                new_block_items=arrangeEmptyStatement(statement.iffalse.block_items)
+                new_iffalse=c_ast.Compound(block_items=new_block_items)
+            else:
+                new_iffalse=statement.iffalse
+        elif type(statement.iffalse) is c_ast.If:
+            new_iffalse=arrangeEmptyStatementIf(statement.iffalse)
+        else:
+            new_iffalse=statement.iffalse
+            
+    if new_iftrue is not None and new_iffalse is None:
+        return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=None)
+    elif new_iftrue is not None and new_iffalse is not None:
+        return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+    elif new_iffalse is not None and type(new_iffalse) is c_ast.Compound:
+	return c_ast.If(cond=c_ast.UnaryOp(op='!', expr=statement.cond), iftrue=new_iffalse, iffalse=None)
+    elif new_iffalse is not None and type(new_iffalse) is c_ast.If:
+	return new_iffalse
+    else:
+	return None
+
+
+
+
+
+
+
+#filename='gototest.c'
+
+def remove_empty_statement(filename):
+    content=None
+    with open(filename) as f:
+        content = f.read()
+    content=content.replace('\r','')
+    text = r""" """+content
+    parser = c_parser.CParser()
+    ast = parser.parse(text)
+    #print ast.show()
+    function_decl = ast.ext[0].decl
+    function_param = function_decl
+    function_body = ast.ext[0].body
+    statements=function_body.block_items
+    
+    statements=programTransformation(function_body)
+    
+    body_comp = c_ast.Compound(block_items=statements)
+    generator = c_generator.CGenerator()   
+    print(generator.visit(body_comp))
+
+    
+
+
+	
+	
+	
+	
+def removeMultipleLabel(statements,label,labelMap):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.Goto:
+                        if statement.name==label:
+                        	new_label=label+str(len(labelMap.keys())+1)
+                        	labelMap[new_label]=new_label
+                        	update_statements.append(c_ast.Goto(name=new_label)) 
+                        else:
+                        	update_statements.append(statement) 
+                elif type(statement) is c_ast.If:
+                	update_statements.append(removeMultipleLabelIf(statement,label,labelMap))
+                elif type(statement) is c_ast.While:
+                	if statement.stmt.block_items is not None:
+                		update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=removeMultipleLabel(statement.stmt.block_items,label,labelMap))))
+			elif type(statement.stmt) is c_ast.Goto:
+				if statement.stmt.name==label:
+			        	new_label=label+str(len(labelMap.keys())+1)
+			        	labelMap[new_label]=new_label
+			        	new_block=[]
+			        	new_block.append(c_ast.Goto(name=new_label))
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			        else:
+			        	new_block=[]
+			        	new_block.append(statement.stmt)
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			else:
+                        	update_statements.append(statement)	
+		                	
+		else:
+                	update_statements.append(statement)
+        return update_statements
+
+
+
+
+def removeMultipleLabelIf(statement,label,labelMap):
+    new_iftrue=None
+    new_iffalse=None
+    if type(statement) is c_ast.If:
+        if type(statement.iftrue) is c_ast.Goto:
+        	if statement.iftrue.name==label:
+	        	new_label=label+str(len(labelMap.keys())+1)
+	        	labelMap[new_label]=new_label
+                        new_iftrue=c_ast.Goto(name=new_label)
+                else:
+                   	new_iftrue=statement.iftrue
+        elif type(statement.iftrue) is c_ast.Compound:
+            if statement.iftrue.block_items is not None:
+                new_block_items=removeMultipleLabel(statement.iftrue.block_items,label,labelMap)
+                new_iftrue=c_ast.Compound(block_items=new_block_items)
+            else:
+                new_iftrue=statement.iftrue
+        else:
+            new_iftrue=statement.iftrue
+       
+       
+        if type(statement.iffalse) is c_ast.Goto:
+		if statement.iffalse.name==label:
+			new_label=label+str(len(labelMap.keys())+1)
+			labelMap[new_label]=new_label
+	                new_iffalse=c_ast.Goto(name=new_label)
+	        else:
+	        	new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.Compound:
+		if statement.iffalse.block_items is not None:
+	        	new_block_items=removeMultipleLabel(statement.iffalse.block_items,label,labelMap)
+	                new_iffalse=c_ast.Compound(block_items=new_block_items)
+	        else:
+	                new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.If:
+		new_iffalse=removeMultipleLabelIf(statement.iffalse,label,labelMap)
+	else:
+        	new_iffalse=statement.iffalse
+        	
+    return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+
+
+    
+
+
+
+def addMultipleLabel(statements,label,labelMap):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.Label:
+                        if statement.name==label:
+                        	for item in labelMap.keys():
+                        		update_statements.append(c_ast.Label(name=item, stmt=None))
+                        	if statement.stmt is not None:
+                        		update_statements.append(statement.stmt)
+                        else:
+                        	update_statements.append(statement) 
+                elif type(statement) is c_ast.If:
+                	update_statements.append(addMultipleLabelIf(statement,label,labelMap))
+                elif type(statement) is c_ast.While:
+                	if statement.stmt.block_items is not None:
+                		update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=addMultipleLabel(statement.stmt.block_items,label,labelMap))))
+			elif type(statement.stmt) is c_ast.Goto:
+				if statement.stmt.name==label:
+					new_block=[]
+					for item in labelMap.keys():
+						new_block.append(c_ast.Label(name=item, stmt=None))
+					if statement.stmt is not None:
+						new_block.append(statement.stmt)
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			        else:
+			        	new_block=[]
+			        	new_block.append(statement.stmt)
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			else:
+                        	update_statements.append(statement)	
+		                	
+		else:
+                	update_statements.append(statement)
+        return update_statements
+
+
+
+
+def addMultipleLabelIf(statement,label,labelMap):
+    new_iftrue=None
+    new_iffalse=None
+    if type(statement) is c_ast.If:
+        if type(statement.iftrue) is c_ast.Label:
+        	if statement.iftrue.name==label:
+			new_block=[]
+			for item in labelMap.keys():
+				new_block.append(c_ast.Label(name=item, stmt=None))
+			if statement.iftrue.stmt is not None:
+				new_block.append(statement.stmt)
+			new_iftrue=c_ast.Compound(block_items=new_block)
+                else:
+                   	new_iftrue=statement.iftrue
+        elif type(statement.iftrue) is c_ast.Compound:
+            if statement.iftrue.block_items is not None:
+                new_block_items=addMultipleLabel(statement.iftrue.block_items,label,labelMap)
+                new_iftrue=c_ast.Compound(block_items=new_block_items)
+            else:
+                new_iftrue=statement.iftrue
+        else:
+            new_iftrue=statement.iftrue
+       
+       
+        if type(statement.iffalse) is c_ast.Label:
+		if statement.iffalse.name==label:
+			new_block=[]
+			for item in labelMap.keys():
+				new_block.append(c_ast.Label(name=item, stmt=None))
+			if statement.iffalse.stmt is not None:
+				new_block.append(statement.stmt)
+			new_iffalse=c_ast.Compound(block_items=new_block)
+	        else:
+	        	new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.Compound:
+		if statement.iffalse.block_items is not None:
+	        	new_block_items=addMultipleLabel(statement.iffalse.block_items,label,labelMap)
+	                new_iffalse=c_ast.Compound(block_items=new_block_items)
+	        else:
+	                new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.If:
+		new_iffalse=addMultipleLabelIf(statement.iffalse,label,labelMap)
+	else:
+        	new_iffalse=statement.iffalse
+        	
+    return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+
+
+
+
+
+
+
+def removeOrphanLabel(statements,label):
+	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.Label:
+                        if statement.name!=label:
+				update_statements.append(statement) 
+                elif type(statement) is c_ast.If:
+                	update_statements.append(removeOrphanLabelIf(statement,label))
+                elif type(statement) is c_ast.While:
+                	if statement.stmt.block_items is not None:
+                		update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=removeOrphanLabel(statement.stmt.block_items,label))))
+			elif type(statement.stmt) is c_ast.Goto:
+				if statement.stmt.name!=label:
+					new_block=[]
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			        else:
+			        	new_block=[]
+			        	new_block.append(statement.stmt)
+			        	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))
+			else:
+                        	update_statements.append(statement)	
+		                	
+		else:
+                	update_statements.append(statement)
+        return update_statements
+
+
+
+
+def removeOrphanLabelIf(statement,label):
+    new_iftrue=None
+    new_iffalse=None
+    if type(statement) is c_ast.If:
+        if type(statement.iftrue) is c_ast.Label:
+        	if statement.iftrue.name==label:
+			new_block=[]
+			if statement.iftrue.stmt is not None:
+				new_block.append(statement.stmt)
+			new_iftrue=c_ast.Compound(block_items=new_block)
+                else:
+                   	new_iftrue=statement.iftrue
+        elif type(statement.iftrue) is c_ast.Compound:
+            if statement.iftrue.block_items is not None:
+                new_block_items=removeOrphanLabel(statement.iftrue.block_items,label)
+                new_iftrue=c_ast.Compound(block_items=new_block_items)
+            else:
+                new_iftrue=statement.iftrue
+        else:
+            new_iftrue=statement.iftrue
+       
+       
+        if type(statement.iffalse) is c_ast.Label:
+		if statement.iffalse.name==label:
+			new_block=[]
+			if statement.iffalse.stmt is not None:
+				new_block.append(statement.stmt)
+			new_iffalse=c_ast.Compound(block_items=new_block)
+	        else:
+	        	new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.Compound:
+		if statement.iffalse.block_items is not None:
+	        	new_block_items=removeOrphanLabel(statement.iffalse.block_items,label)
+	                new_iffalse=c_ast.Compound(block_items=new_block_items)
+	        else:
+	                new_iffalse=statement.iffalse
+	elif type(statement.iffalse) is c_ast.If:
+		new_iffalse=removeOrphanLabelIf(statement.iffalse,label)
+	else:
+        	new_iffalse=statement.iffalse
+        	
+    return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+    
+   
+ 
+dummyCount=0
+    
+def functionToAssignment(statements):
+ 	global dummyCount
+ 	update_statements=[]
+	for statement in statements:
+		if type(statement) is c_ast.FuncCall:
+			if  '__VERIFIER' not in statement.name.name:
+				dummyCount=dummyCount+1
+				update_statements.append(c_ast.Assignment(op='=',lvalue=c_ast.ID(name='_DUMMY'+str(dummyCount)), rvalue=statement))
+			else:
+				update_statements.append(statement)
+		elif type(statement) is c_ast.If:
+	                	update_statements.append(functionToAssignmentIf(statement))
+	        elif type(statement) is c_ast.While:
+	        	if type(statement.stmt) is c_ast.Compound:
+	                	update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=functionToAssignment(statement.stmt.block_items))))
+			else:
+				if statement.stmt is not None:
+					if type(statement) is c_ast.EmptyStatement:
+						new_block=[]
+						update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=new_block)))	
+					else:
+						new_block=[]
+						new_block.append(statement.stmt)
+						update_statements.append(c_ast.While(cond=statement.cond,stmt=c_ast.Compound(block_items=functionToAssignment(new_block))))
+				else:
+			        	update_statements.append(statement)
+		else:
+                	update_statements.append(statement)
+        return update_statements
+                	
+                	
+                	
+def functionToAssignmentIf(statement):
+      new_iftrue=None
+      new_iffalse=None
+      global dummyCount
+      if type(statement) is c_ast.If:
+          if type(statement.iftrue) is c_ast.Compound:
+	  	new_block_items=functionToAssignment(statement.iftrue.block_items)
+                new_iftrue=c_ast.Compound(block_items=new_block_items)
+          elif type(statement.iftrue) is c_ast.FuncCall:
+          	if  '__VERIFIER' not in statement.iftrue.name.name:
+	  		dummyCount=dummyCount+1
+	  		new_iftrue=c_ast.Assignment(op='=',lvalue=c_ast.ID(name='_DUMMY'+str(dummyCount)), rvalue=statement.iftrue)
+	  	else:
+	  		new_iftrue=statement.iftrue
+          else:
+               new_iftrue=statement.iftrue
+              
+          if type(statement.iffalse) is c_ast.Compound:
+              if statement.iffalse.block_items is not None:
+                  new_block_items=functionToAssignment(statement.iffalse.block_items)
+                  new_iffalse=c_ast.Compound(block_items=new_block_items)
+              else:
+                  new_iffalse=statement.iffalse
+          elif type(statement.iffalse) is c_ast.FuncCall:
+          	if  '__VERIFIER' not in statement.iffalse.name.name:
+	      		dummyCount=dummyCount+1
+	      		new_iffalse=c_ast.Assignment(op='=',lvalue=c_ast.ID(name='_DUMMY'+str(dummyCount)), rvalue=statement.iffalse)
+	      	else:
+	      		new_iffalse=statement.iffalse
+          elif type(statement.iffalse) is c_ast.If:
+              new_iffalse=functionToAssignmentIf(statement.iffalse)
+          else:
+              new_iffalse=statement.iffalse
+      return c_ast.If(cond=statement.cond, iftrue=new_iftrue, iffalse=new_iffalse)
+      
+      
+
+
+def getDummyFunction(f,o,a,cm):
+	new_o={}
+	for eq in o.keys():
+		if o[eq][0]=='e':
+			lefthandstmt=expr2string1(o[eq][1])
+			if '_DUMMY' in lefthandstmt:
+				new_eq=[]
+				new_eq.append('s0')
+				new_eq.append(o[eq][2])
+				new_o[eq]=new_eq
+			else:
+				new_o[eq]=o[eq]
+		else:
+			new_o[eq]=o[eq]
+	#return f,new_o,a,cm
+	return f,o,a,cm
