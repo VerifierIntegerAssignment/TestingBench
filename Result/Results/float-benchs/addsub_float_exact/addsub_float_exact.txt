@@ -1,0 +1,112 @@
+>>> prove_auto(file_name)
+Program Body
+{
+  int RET = 0;
+  int _1_PROVE = 0;
+  float x;
+  float y;
+  float z;
+  float r;
+  x = 1e7f;
+  y = x + 1.f;
+  z = x - 1.f;
+  r = y - z;
+  _1_PROVE = r == 2.f;
+  RET = 0;
+}
+
+Function Name:
+main
+Return Type:
+int
+Input Variables:
+{}
+Local Variables:
+{ _1_PROVE:int RET:int r:float y:float x:float z:float}
+Program Body
+{
+  int RET = 0;
+  int _1_FAILED = 0;
+  if (cond <= 0)
+  {
+    ERROR:
+
+
+    _1_FAILED = 1;
+  }
+
+}
+
+Function Name:
+__VERIFIER_assert
+Return Type:
+void
+Input Variables:
+{ cond:int}
+Local Variables:
+{ _1_FAILED:int RET:int}
+Output for main:
+Output in prefix notation:
+1. Frame axioms:
+
+2. Output equations:
+(= y1 (+ 10000000.0 1.0))
+(= x1 10000000.0)
+(= r1 (- (+ 10000000.0 1.0) (- 10000000.0 1.0)))
+(= z1 (- 10000000.0 1.0))
+(= main 0)
+
+3. Other axioms:
+
+Output in normal notation:
+1. Frame axioms:
+
+2. Output equations:
+y1 = (10000000.0+1.0)
+x1 = 10000000.0
+r1 = ((10000000.0+1.0)-(10000000.0-1.0))
+z1 = (10000000.0-1.0)
+main = 0
+
+3. Other axioms:
+
+4. Assumption :
+
+5. Assertion :
+(((10000000.0+1.0)-(10000000.0-1.0))==2.0)
+Output for __VERIFIER_assert:
+Output in prefix notation:
+1. Frame axioms:
+(= (cond1 cond) cond)
+
+2. Output equations:
+(= (_1_FAILED1 cond) (ite (<= cond 0) 1 0))
+(= (__VERIFIER_assert cond) 0)
+
+3. Other axioms:
+
+Output in normal notation:
+1. Frame axioms:
+cond1(cond) = cond
+
+2. Output equations:
+_1_FAILED1(cond) = ite((cond<=0),1,0)
+__VERIFIER_assert(cond) = 0
+
+3. Other axioms:
+
+4. Assumption :
+
+5. Assertion :
+
+----Proving Process----
+
+
+Function Name--main
+
+Assertion To Prove:(2.00000000000000==2.00000000000000)
+Successfully Proved
+
+Function Name--__VERIFIER_assert
+No Assertion to Prove
+0

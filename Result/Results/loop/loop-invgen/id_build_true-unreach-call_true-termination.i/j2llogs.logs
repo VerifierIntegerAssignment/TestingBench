@@ -1,0 +1,285 @@
+
+**************
+Proof Details
+**************
+[th-lemma(Or(Not(_n2!2 <= -1), Not(_n2!2 >= 0))), not-or-elim(mp~(mp(asserted(Not(ForAll(_n2,
+                                       Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int)))),
+                   monotonicity(quant-intro(trans(monotonicity(trans(trans(monotonicity(trans(trans(monotonicity(rewrite(__VERIFIER_nondet_int -
+                                        Var(0) ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) -
+                                        1),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        -1*Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1),
+                                        trans(monotonicity(rewrite(-1*
+                                        1 ==
+                                        -1),
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        (-1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) <
+                                        __VERIFIER_nondet_int)),
+                                        rewrite((-1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0))),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0))),
+                                        monotonicity(rewrite((__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)) ==
+                                        (Var(0) <= -1)),
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)) ==
+                                        Not(Var(0) <= -1)),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(Var(0) <= -1)),
+                                        Implies(Var(0) >= 0,
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Implies(Var(0) >= 0,
+                                        Not(Var(0) <= -1))),
+                                        rewrite(Implies(Var(0) >=
+                                        0,
+                                        Not(Var(0) <= -1)) ==
+                                        Or(Not(Var(0) >= 0),
+                                        Not(Var(0) <= -1))),
+                                        Implies(Var(0) >= 0,
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Or(Not(Var(0) >= 0),
+                                        Not(Var(0) <= -1))),
+                                        (ForAll(_n2,
+                                        Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int))) ==
+                                        (ForAll(_n2,
+                                        Or(Not(_n2 >= 0),
+                                        Not(_n2 <= -1))))),
+                                Not(ForAll(_n2,
+                                        Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int))) ==
+                                Not(ForAll(_n2,
+                                        Or(Not(_n2 >= 0),
+                                        Not(_n2 <= -1))))),
+                   Not(ForAll(_n2,
+                              Or(Not(_n2 >= 0),
+                                 Not(_n2 <= -1))))),
+                sk(~(Not(ForAll(_n2,
+                                Or(Not(_n2 >= 0),
+                                   Not(_n2 <= -1)))),
+                     Not(Or(Not(_n2!2 >= 0),
+                            Not(_n2!2 <= -1))))),
+                Not(Or(Not(_n2!2 >= 0), Not(_n2!2 <= -1)))),
+            _n2!2 >= 0), not-or-elim(mp~(mp(asserted(Not(ForAll(_n2,
+                                       Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int)))),
+                   monotonicity(quant-intro(trans(monotonicity(trans(trans(monotonicity(trans(trans(monotonicity(rewrite(__VERIFIER_nondet_int -
+                                        Var(0) ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) -
+                                        1),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        -1*Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1),
+                                        trans(monotonicity(rewrite(-1*
+                                        1 ==
+                                        -1),
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1 ==
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) +
+                                        -1*1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 ==
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        (-1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) <
+                                        __VERIFIER_nondet_int)),
+                                        rewrite((-1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0) <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0))),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0))),
+                                        monotonicity(rewrite((__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)) ==
+                                        (Var(0) <= -1)),
+                                        Not(__VERIFIER_nondet_int <=
+                                        -1 +
+                                        __VERIFIER_nondet_int +
+                                        -1*Var(0)) ==
+                                        Not(Var(0) <= -1)),
+                                        (__VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Not(Var(0) <= -1)),
+                                        Implies(Var(0) >= 0,
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Implies(Var(0) >= 0,
+                                        Not(Var(0) <= -1))),
+                                        rewrite(Implies(Var(0) >=
+                                        0,
+                                        Not(Var(0) <= -1)) ==
+                                        Or(Not(Var(0) >= 0),
+                                        Not(Var(0) <= -1))),
+                                        Implies(Var(0) >= 0,
+                                        __VERIFIER_nondet_int -
+                                        Var(0) -
+                                        1 <
+                                        __VERIFIER_nondet_int) ==
+                                        Or(Not(Var(0) >= 0),
+                                        Not(Var(0) <= -1))),
+                                        (ForAll(_n2,
+                                        Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int))) ==
+                                        (ForAll(_n2,
+                                        Or(Not(_n2 >= 0),
+                                        Not(_n2 <= -1))))),
+                                Not(ForAll(_n2,
+                                        Implies(_n2 >= 0,
+                                        __VERIFIER_nondet_int -
+                                        _n2 -
+                                        1 <
+                                        __VERIFIER_nondet_int))) ==
+                                Not(ForAll(_n2,
+                                        Or(Not(_n2 >= 0),
+                                        Not(_n2 <= -1))))),
+                   Not(ForAll(_n2,
+                              Or(Not(_n2 >= 0),
+                                 Not(_n2 <= -1))))),
+                sk(~(Not(ForAll(_n2,
+                                Or(Not(_n2 >= 0),
+                                   Not(_n2 <= -1)))),
+                     Not(Or(Not(_n2!2 >= 0),
+                            Not(_n2!2 <= -1))))),
+                Not(Or(Not(_n2!2 >= 0), Not(_n2!2 <= -1)))),
+            _n2!2 <= -1), False]
