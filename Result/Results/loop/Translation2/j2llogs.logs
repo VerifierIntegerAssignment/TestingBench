@@ -1,0 +1,972 @@
+
+**************
+Proof Details
+**************
+[mp(asserted(Not(Implies(__VERIFIER_nondet_int ==
+                        __VERIFIER_nondet_int,
+                        y2(_N1(0), 0) == 0))),
+   monotonicity(trans(monotonicity(rewrite((__VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int) ==
+                                        True),
+                                   Implies(__VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int,
+                                        y2(_N1(0), 0) == 0) ==
+                                   Implies(True,
+                                        y2(_N1(0), 0) == 0)),
+                      rewrite(Implies(True,
+                                      y2(_N1(0), 0) == 0) ==
+                              (y2(_N1(0), 0) == 0)),
+                      Implies(__VERIFIER_nondet_int ==
+                              __VERIFIER_nondet_int,
+                              y2(_N1(0), 0) == 0) ==
+                      (y2(_N1(0), 0) == 0)),
+                Not(Implies(__VERIFIER_nondet_int ==
+                            __VERIFIER_nondet_int,
+                            y2(_N1(0), 0) == 0)) ==
+                Not(y2(_N1(0), 0) == 0)),
+   Not(y2(_N1(0), 0) == 0)), trans(monotonicity(unit-resolution(mp(quant-inst(Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0))),
+                                      trans(monotonicity(trans(monotonicity(trans(monotonicity(rewrite((0 ==
+                                        0) ==
+                                        True),
+                                        Not(0 == 0) ==
+                                        Not(True)),
+                                        rewrite(Not(True) ==
+                                        False),
+                                        Not(0 == 0) == False),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0) ==
+                                        Or(False,
+                                        _N1(0) == 0)),
+                                        rewrite(Or(False,
+                                        _N1(0) == 0) ==
+                                        (_N1(0) == 0)),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0) ==
+                                        (_N1(0) == 0)),
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0)) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                        rewrite(Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0)) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                      Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                   mp(mp~(mp(asserted(ForAll(_y7,
+                                        Implies(Not(_y7 != 0),
+                                        _N1(_y7) == 0))),
+                                        quant-intro(trans(monotonicity(trans(monotonicity(rewrite(Var(0) !=
+                                        0 ==
+                                        Not(Var(0) == 0)),
+                                        Not(Var(0) != 0) ==
+                                        Not(Not(Var(0) == 0))),
+                                        rewrite(Not(Not(Var(0) ==
+                                        0)) ==
+                                        (Var(0) == 0)),
+                                        Not(Var(0) != 0) ==
+                                        (Var(0) == 0)),
+                                        Implies(Not(Var(0) !=
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Implies(Var(0) == 0,
+                                        _N1(Var(0)) == 0)),
+                                        rewrite(Implies(Var(0) ==
+                                        0,
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        Implies(Not(Var(0) !=
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        (ForAll(_y7,
+                                        Implies(Not(_y7 != 0),
+                                        _N1(_y7) == 0))) ==
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        nnf-pos(refl(~(Or(Not(Var(0) ==
+                                        0),
+                                        _N1(Var(0)) == 0),
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0))),
+                                        ~(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                      quant-intro(refl(Or(Not(Var(0) ==
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))) ==
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                      ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                   _N1(0) == 0),
+                   y2(_N1(0), 0) == y2(0, 0)),
+      unit-resolution(quant-inst(Or(Not(ForAll(_y6,
+                                        y2(0, _y6) == _y6)),
+                                    y2(0, 0) == 0)),
+                      mp(mp~(asserted(ForAll(_y6,
+                                        y2(0, _y6) == _y6)),
+                             nnf-pos(refl(~(y2(0, Var(0)) ==
+                                        Var(0),
+                                        y2(0, Var(0)) ==
+                                        Var(0))),
+                                     ~(ForAll(_y6,
+                                        y2(0, _y6) == _y6),
+                                       ForAll(_y6,
+                                        y2(0, _y6) == _y6))),
+                             ForAll(_y6, y2(0, _y6) == _y6)),
+                         quant-intro(refl((y2(0, Var(0)) ==
+                                        Var(0)) ==
+                                        (y2(0, Var(0)) ==
+                                        Var(0))),
+                                     (ForAll(_y6,
+                                        y2(0, _y6) == _y6)) ==
+                                     (ForAll(_y6,
+                                        y2(0, _y6) == _y6))),
+                         ForAll(_y6, y2(0, _y6) == _y6)),
+                      y2(0, 0) == 0),
+      y2(_N1(0), 0) == 0), False]
+
+**************
+Proof Details
+**************
+[mp(asserted(Not(Implies(__VERIFIER_nondet_int ==
+                        __VERIFIER_nondet_int,
+                        y2(_N1(0), 0) == 0))),
+   monotonicity(trans(monotonicity(rewrite((__VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int) ==
+                                        True),
+                                   Implies(__VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int,
+                                        y2(_N1(0), 0) == 0) ==
+                                   Implies(True,
+                                        y2(_N1(0), 0) == 0)),
+                      rewrite(Implies(True,
+                                      y2(_N1(0), 0) == 0) ==
+                              (y2(_N1(0), 0) == 0)),
+                      Implies(__VERIFIER_nondet_int ==
+                              __VERIFIER_nondet_int,
+                              y2(_N1(0), 0) == 0) ==
+                      (y2(_N1(0), 0) == 0)),
+                Not(Implies(__VERIFIER_nondet_int ==
+                            __VERIFIER_nondet_int,
+                            y2(_N1(0), 0) == 0)) ==
+                Not(y2(_N1(0), 0) == 0)),
+   Not(y2(_N1(0), 0) == 0)), trans(monotonicity(unit-resolution(mp(quant-inst(Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0))),
+                                      trans(monotonicity(trans(monotonicity(trans(monotonicity(rewrite((0 ==
+                                        0) ==
+                                        True),
+                                        Not(0 == 0) ==
+                                        Not(True)),
+                                        rewrite(Not(True) ==
+                                        False),
+                                        Not(0 == 0) == False),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0) ==
+                                        Or(False,
+                                        _N1(0) == 0)),
+                                        rewrite(Or(False,
+                                        _N1(0) == 0) ==
+                                        (_N1(0) == 0)),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0) ==
+                                        (_N1(0) == 0)),
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0)) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                        rewrite(Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        Or(Not(0 == 0),
+                                        _N1(0) == 0)) ==
+                                        Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                      Or(Not(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        _N1(0) == 0)),
+                                   mp(mp~(mp(asserted(ForAll(_y7,
+                                        Implies(Not(_y7 != 0),
+                                        _N1(_y7) == 0))),
+                                        quant-intro(trans(monotonicity(trans(monotonicity(rewrite(Var(0) !=
+                                        0 ==
+                                        Not(Var(0) == 0)),
+                                        Not(Var(0) != 0) ==
+                                        Not(Not(Var(0) == 0))),
+                                        rewrite(Not(Not(Var(0) ==
+                                        0)) ==
+                                        (Var(0) == 0)),
+                                        Not(Var(0) != 0) ==
+                                        (Var(0) == 0)),
+                                        Implies(Not(Var(0) !=
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Implies(Var(0) == 0,
+                                        _N1(Var(0)) == 0)),
+                                        rewrite(Implies(Var(0) ==
+                                        0,
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        Implies(Not(Var(0) !=
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        (ForAll(_y7,
+                                        Implies(Not(_y7 != 0),
+                                        _N1(_y7) == 0))) ==
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                        nnf-pos(refl(~(Or(Not(Var(0) ==
+                                        0),
+                                        _N1(Var(0)) == 0),
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0))),
+                                        ~(ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                        ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                      quant-intro(refl(Or(Not(Var(0) ==
+                                        0),
+                                        _N1(Var(0)) == 0) ==
+                                        Or(Not(Var(0) == 0),
+                                        _N1(Var(0)) == 0)),
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))) ==
+                                        (ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0)))),
+                                      ForAll(_y7,
+                                        Or(Not(_y7 == 0),
+                                        _N1(_y7) == 0))),
+                                   _N1(0) == 0),
+                   y2(_N1(0), 0) == y2(0, 0)),
+      unit-resolution(quant-inst(Or(Not(ForAll(_y6,
+                                        y2(0, _y6) == _y6)),
+                                    y2(0, 0) == 0)),
+                      mp(mp~(asserted(ForAll(_y6,
+                                        y2(0, _y6) == _y6)),
+                             nnf-pos(refl(~(y2(0, Var(0)) ==
+                                        Var(0),
+                                        y2(0, Var(0)) ==
+                                        Var(0))),
+                                     ~(ForAll(_y6,
+                                        y2(0, _y6) == _y6),
+                                       ForAll(_y6,
+                                        y2(0, _y6) == _y6))),
+                             ForAll(_y6, y2(0, _y6) == _y6)),
+                         quant-intro(refl((y2(0, Var(0)) ==
+                                        Var(0)) ==
+                                        (y2(0, Var(0)) ==
+                                        Var(0))),
+                                     (ForAll(_y6,
+                                        y2(0, _y6) == _y6)) ==
+                                     (ForAll(_y6,
+                                        y2(0, _y6) == _y6))),
+                         ForAll(_y6, y2(0, _y6) == _y6)),
+                      y2(0, 0) == 0),
+      y2(_N1(0), 0) == 0), False]
+
+**************
+Proof Details
+**************
+[not-or-elim(mp(asserted(Not(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                       __VERIFIER_nondet_int) ==
+                                    0,
+                                    y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                       __VERIFIER_nondet_int +
+                                       1) ==
+                                    0))),
+               monotonicity(trans(monotonicity(monotonicity(monotonicity(monotonicity(rewrite(__VERIFIER_nondet_int +
+                                        1 ==
+                                        1 +
+                                        __VERIFIER_nondet_int),
+                                        _N1(__VERIFIER_nondet_int +
+                                        1) ==
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int)),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        1 ==
+                                        1 +
+                                        __VERIFIER_nondet_int),
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        (y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                        (y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                        Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                        Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                  rewrite(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0) ==
+                                        Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0),
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                  Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                  Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0),
+                                     y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                     0)),
+                            Not(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0)) ==
+                            Not(Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                       0),
+                                   y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                      1 +
+                                      __VERIFIER_nondet_int) ==
+                                   0))),
+               Not(Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                             __VERIFIER_nondet_int) ==
+                          0),
+                      y2(_N1(1 + __VERIFIER_nondet_int),
+                         1 + __VERIFIER_nondet_int) ==
+                      0))),
+            Not(y2(_N1(1 + __VERIFIER_nondet_int),
+                   1 + __VERIFIER_nondet_int) ==
+                0)), trans(trans(monotonicity(symm(th-lemma(unit-resolution(th-lemma(Or(Not(_N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) >=
+                                        -1)),
+                                        unit-resolution(mp(quant-inst(Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1))),
+                                        trans(monotonicity(trans(monotonicity(trans(monotonicity(trans(monotonicity(monotonicity(rewrite(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int),
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int)),
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int))),
+                                        rewrite((_N1(__VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int)) ==
+                                        True),
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        True),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        Not(True)),
+                                        rewrite(Not(True) ==
+                                        False),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        False),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        False,
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        rewrite(Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        False,
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1))),
+                                        rewrite(Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Not(_N1(__VERIFIER_nondet_int) >=
+..., False]
+
+**************
+Proof Details
+**************
+[not-or-elim(mp(asserted(Not(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                       __VERIFIER_nondet_int) ==
+                                    0,
+                                    y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                       __VERIFIER_nondet_int +
+                                       1) ==
+                                    0))),
+               monotonicity(trans(monotonicity(monotonicity(monotonicity(monotonicity(rewrite(__VERIFIER_nondet_int +
+                                        1 ==
+                                        1 +
+                                        __VERIFIER_nondet_int),
+                                        _N1(__VERIFIER_nondet_int +
+                                        1) ==
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int)),
+                                        rewrite(__VERIFIER_nondet_int +
+                                        1 ==
+                                        1 +
+                                        __VERIFIER_nondet_int),
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        (y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                        (y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                        Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                        Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                  rewrite(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0) ==
+                                        Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0),
+                                        y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        0)),
+                                  Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0) ==
+                                  Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0),
+                                     y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                     0)),
+                            Not(Implies(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                        0,
+                                        y2(_N1(__VERIFIER_nondet_int +
+                                        1),
+                                        __VERIFIER_nondet_int +
+                                        1) ==
+                                        0)) ==
+                            Not(Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                                        __VERIFIER_nondet_int) ==
+                                       0),
+                                   y2(_N1(1 +
+                                        __VERIFIER_nondet_int),
+                                      1 +
+                                      __VERIFIER_nondet_int) ==
+                                   0))),
+               Not(Or(Not(y2(_N1(__VERIFIER_nondet_int),
+                             __VERIFIER_nondet_int) ==
+                          0),
+                      y2(_N1(1 + __VERIFIER_nondet_int),
+                         1 + __VERIFIER_nondet_int) ==
+                      0))),
+            Not(y2(_N1(1 + __VERIFIER_nondet_int),
+                   1 + __VERIFIER_nondet_int) ==
+                0)), trans(trans(monotonicity(symm(th-lemma(unit-resolution(th-lemma(Or(Not(_N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) >=
+                                        -1)),
+                                        unit-resolution(mp(quant-inst(Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1))),
+                                        trans(monotonicity(trans(monotonicity(trans(monotonicity(trans(monotonicity(monotonicity(rewrite(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int ==
+                                        __VERIFIER_nondet_int),
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int)),
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int))),
+                                        rewrite((_N1(__VERIFIER_nondet_int) ==
+                                        _N1(__VERIFIER_nondet_int)) ==
+                                        True),
+                                        (_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        True),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        Not(True)),
+                                        rewrite(Not(True) ==
+                                        False),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)) ==
+                                        False),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        False,
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        rewrite(Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        False,
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1) ==
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1))),
+                                        rewrite(Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)),
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Or(Not(_N1(__VERIFIER_nondet_int) >=
+                                        0),
+                                        Not(_N1(__VERIFIER_nondet_int) ==
+                                        _N1(-1 +
+                                        1 +
+                                        __VERIFIER_nondet_int)),
+                                        _N1(__VERIFIER_nondet_int) +
+                                        -1*
+                                        _N1(1 +
+                                        __VERIFIER_nondet_int) ==
+                                        -1)) ==
+                                        Or(Not(ForAll([_n1,
+                                        _y7],
+                                        Or(Not(_n1 >= 0),
+                                        Not(_n1 ==
+                                        _N1(-1 + _y7)),
+                                        _n1 + -1*_N1(_y7) ==
+                                        -1))),
+                                        Not(_N1(__VERIFIER_nondet_int) >=
+..., False]

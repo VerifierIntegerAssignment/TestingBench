@@ -1,0 +1,146 @@
+>>> translate(file_name)
+Program Body
+{
+  int break_1_flag = 0;
+  int RET = 0;
+  int _1_PROVE = 0;
+  int x;
+  int y;
+  x = 0;
+  y = 0;
+  while ((1 > 0) && (break_1_flag == 0))
+  {
+    break_1_flag = 0;
+    if (x < 50)
+    {
+      y = y + 1;
+    }
+    else
+    {
+      y = y - 1;
+    }
+
+    if (y < 0)
+    {
+      break_1_flag = 1;
+    }
+
+    if (break_1_flag == 0)
+    {
+      x = x + 1;
+    }
+
+  }
+
+  _1_PROVE = x == 100;
+  RET = 0;
+}
+
+Function Name:
+main
+Return Type:
+int
+Input Variables:
+{}
+Local Variables:
+{ y:int x:int _1_PROVE:int RET:int break_1_flag:int}
+Program Body
+{
+  int RET = 0;
+  int _1_FAILED = 0;
+  if (cond <= 0)
+  {
+    ERROR:
+    
+
+    _1_FAILED = 1;
+  }
+
+}
+
+Function Name:
+__VERIFIER_assert
+Return Type:
+void
+Input Variables:
+{ cond:int}
+Local Variables:
+{ _1_FAILED:int RET:int}
+Output for main:
+Output in prefix notation:
+1. Frame axioms:
+
+2. Output equations:
+(= y1 (y8 (_N1 0 0 0) 0 0))
+(= x1 (x8 (_N1 0 0 0) 0 0))
+(= main 0)
+(= break_1_flag1 (break_1_flag8 (_N1 0 0 0) 0 0 0))
+
+3. Other axioms:
+(= (y8 (+ _n1 1) _y1 _y2) (ite (< (x8 _n1 _y2 _y1) 50) (+ (y8 _n1 _y1 _y2) 1) (- (y8 _n1 _y1 _y2) 1)))
+(= (x8 (+ _n1 1) _y2 _y1) (ite (== (ite (< (ite (< (x8 _n1 _y2 _y1) 50) (+ (y8 _n1 _y1 _y2) 1) (- (y8 _n1 _y1 _y2) 1)) 0) 1 0) 0) (+ (x8 _n1 _y2 _y1) 1) (x8 _n1 _y2 _y1)))
+(= (break_1_flag8 (+ _n1 1) _y4 _y1 _y2) (ite (< (ite (< (x8 _n1 _y2 _y1) 50) (+ (y8 _n1 _y1 _y2) 1) (- (y8 _n1 _y1 _y2) 1)) 0) 1 0))
+(= (y8 0 _y1 _y2) _y1)
+(= (x8 0 _y2 _y1) _y2)
+(= (break_1_flag8 0 _y4 _y1 _y2) _y4)
+(or (<= 1 0) (!= (break_1_flag8 (_N1 _y4 _y1 _y2) _y4 _y1 _y2) 0))
+(implies (< _n1 (_N1 _y4 _y1 _y2)) (and (> 1 0) (== (break_1_flag8 _n1 _y4 _y1 _y2) 0)))
+(iff (= (_N1 _y4 _y1 _y2) 0) (not (and (> 1 0) (== _y4 0))))
+(iff (= (_N1 _y4 _y1 _y2) (+ _n1 1)) (= _n1 (_N1 (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) (ite (< _y2 50) (+ _y1 1) (- _y1 1)) (ite (== (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) 0) (+ _y2 1) _y2))))
+(= (y8 (+ _n1 1) _y1 _y2) (y8 _n1 (ite (< _y2 50) (+ _y1 1) (- _y1 1)) (ite (== (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) 0) (+ _y2 1) _y2)))
+(= (x8 (+ _n1 1) _y2 _y1) (x8 _n1 (ite (== (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) 0) (+ _y2 1) _y2) (ite (< _y2 50) (+ _y1 1) (- _y1 1))))
+(= (break_1_flag8 (+ _n1 1) _y4 _y1 _y2) (break_1_flag8 _n1 (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) (ite (< _y2 50) (+ _y1 1) (- _y1 1)) (ite (== (ite (< (ite (< _y2 50) (+ _y1 1) (- _y1 1)) 0) 1 0) 0) (+ _y2 1) _y2)))
+
+Output in normal notation:
+1. Frame axioms:
+
+2. Output equations:
+y1 = y8(_N1(0,0,0),0,0)
+x1 = x8(_N1(0,0,0),0,0)
+main = 0
+break_1_flag1 = break_1_flag8(_N1(0,0,0),0,0,0)
+
+3. Other axioms:
+y8((_n1+1),_y1,_y2) = ite((x8(_n1,_y2,_y1)<50),(y8(_n1,_y1,_y2)+1),(y8(_n1,_y1,_y2)-1))
+x8((_n1+1),_y2,_y1) = ite((ite((ite((x8(_n1,_y2,_y1)<50),(y8(_n1,_y1,_y2)+1),(y8(_n1,_y1,_y2)-1))<0),1,0)==0),(x8(_n1,_y2,_y1)+1),x8(_n1,_y2,_y1))
+break_1_flag8((_n1+1),_y4,_y1,_y2) = ite((ite((x8(_n1,_y2,_y1)<50),(y8(_n1,_y1,_y2)+1),(y8(_n1,_y1,_y2)-1))<0),1,0)
+y8(0,_y1,_y2) = _y1
+x8(0,_y2,_y1) = _y2
+break_1_flag8(0,_y4,_y1,_y2) = _y4
+((1<=0) or (break_1_flag8(_N1(_y4,_y1,_y2),_y4,_y1,_y2)!=0))
+(_n1<_N1(_y4,_y1,_y2)) -> ((1>0) and (break_1_flag8(_n1,_y4,_y1,_y2)==0))
+_N1(_y4,_y1,_y2)=0 <=> not ((1>0) and (_y4==0))
+_N1(_y4,_y1,_y2)=_n1+1 <=> (_n1=_N1(ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0),ite((_y2<50),(_y1+1),(_y1-1)),ite((ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0)==0),(_y2+1),_y2)))
+y8((_n1+1),_y1,_y2) = y8(_n1,ite((_y2<50),(_y1+1),(_y1-1)),ite((ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0)==0),(_y2+1),_y2))
+x8((_n1+1),_y2,_y1) = x8(_n1,ite((ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0)==0),(_y2+1),_y2),ite((_y2<50),(_y1+1),(_y1-1)))
+break_1_flag8((_n1+1),_y4,_y1,_y2) = break_1_flag8(_n1,ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0),ite((_y2<50),(_y1+1),(_y1-1)),ite((ite((ite((_y2<50),(_y1+1),(_y1-1))<0),1,0)==0),(_y2+1),_y2))
+
+4. Assumption :
+
+5. Assertion :
+(x8(_N1(0,0,0),0,0)==100)
+Output for __VERIFIER_assert:
+Output in prefix notation:
+1. Frame axioms:
+(= (cond1 cond) cond)
+
+2. Output equations:
+(= (_1_FAILED1 cond) (ite (<= cond 0) 1 0))
+(= (__VERIFIER_assert cond) 0)
+
+3. Other axioms:
+
+Output in normal notation:
+1. Frame axioms:
+cond1(cond) = cond
+
+2. Output equations:
+_1_FAILED1(cond) = ite((cond<=0),1,0)
+__VERIFIER_assert(cond) = 0
+
+3. Other axioms:
+
+4. Assumption :
+
+5. Assertion :
+<__main__.programclass object at 0x10eb9b990>
